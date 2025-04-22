@@ -6,14 +6,31 @@
  * Crea y configura al jugador
  */
 function createPlayer(scene) {
-    // Colocar al jugador en la primera sala
-    const startRoom = gameState.rooms[0];
-    const playerX = startRoom.centerX * CONFIG.tileSize + (CONFIG.tileSize / 2);
-    const playerY = startRoom.centerY * CONFIG.tileSize + (CONFIG.tileSize / 2);
+    // Colocar al jugador en la primera sala o en el centro del mapa si no hay salas
+    let playerX, playerY;
     
-    // Crear gráfico personalizado para el jugador en lugar de usar sprites externos
+    if (gameState.rooms.length > 0) {
+        const startRoom = gameState.rooms[0];
+        playerX = startRoom.centerX * CONFIG.tileSize + (CONFIG.tileSize / 2);
+        playerY = startRoom.centerY * CONFIG.tileSize + (CONFIG.tileSize / 2);
+    } else {
+        // Si no hay salas, colocar en el centro del mapa
+        playerX = (CONFIG.mapWidth / 2) * CONFIG.tileSize;
+        playerY = (CONFIG.mapHeight / 2) * CONFIG.tileSize;
+    }
+    
+    console.log(`Jugador colocado en: X=${playerX}, Y=${playerY}`);
+    
+    // Crear gráfico personalizado para el jugador con un color brillante
     const playerGraphic = scene.add.graphics();
-    SPRITES.player.render(playerGraphic, 0, 0, CONFIG.tileSize * 0.8);
+    
+    // Dibujar un círculo brillante para el jugador
+    playerGraphic.fillStyle(0xff0000, 1); // Rojo brillante
+    playerGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.6);
+    
+    // Añadir un borde para mayor visibilidad
+    playerGraphic.lineStyle(2, 0xffff00, 1);
+    playerGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.6);
     
     // Crear sprite del jugador con físicas
     const player = scene.physics.add.existing(
@@ -22,16 +39,38 @@ function createPlayer(scene) {
     player.setTexture(playerGraphic.generateTexture());
     playerGraphic.destroy();
     
-    player.setScale(1);
-    player.setDepth(10);
+    // Hacer el jugador más grande para mayor visibilidad
+    player.setScale(1.5);
+    player.setDepth(20); // Asegurar que esté por encima de todo
     player.setCollideWorldBounds(true);
     
     // Configurar la cámara para seguir al jugador
     scene.cameras.main.setBounds(0, 0, 
         CONFIG.mapWidth * CONFIG.tileSize, 
         CONFIG.mapHeight * CONFIG.tileSize);
-    scene.cameras.main.startFollow(player, true, 0.08, 0.08);
-    scene.cameras.main.setZoom(1);
+    scene.cameras.main.startFollow(player, true, 0.1, 0.1);
+    
+    // Ajustar el zoom para ver más del mapa (menor zoom = ver más)
+    scene.cameras.main.setZoom(0.8);
+    
+    // Forzar una actualización de la cámara inmediatamente
+    scene.cameras.main.centerOn(playerX, playerY);
+    
+    // Agregar efecto de "luz" alrededor del jugador
+    const light = scene.add.circle(playerX, playerY, CONFIG.tileSize * 3, 0xffffff, 0.2);
+    light.setDepth(5);
+    
+    // Hacer que la luz siga al jugador
+    scene.tweens.add({
+        targets: light,
+        alpha: 0.3,
+        duration: 1000,
+        yoyo: true,
+        repeat: -1
+    });
+    
+    // Actualizar posición de la luz cuando el jugador se mueve
+    player.light = light;
     
     return player;
 }
@@ -65,6 +104,12 @@ function handlePlayerMovement(scene, player, cursors, wasd) {
         (cursors.up.isDown || wasd.up.isDown || cursors.down.isDown || wasd.down.isDown)) {
         // Reducir la velocidad diagonal
         player.body.velocity.normalize().scale(speed);
+    }
+
+    // Actualizar la posición de la luz para que siga al jugador
+    if (player.light) {
+        player.light.x = player.x;
+        player.light.y = player.y;
     }
 }
 

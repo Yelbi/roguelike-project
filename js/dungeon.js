@@ -216,19 +216,17 @@ function removeWallAt(scene, x, y) {
     });
 }
 
-/**
- * Crea una pared en la posición especificada
- */
+// Reemplaza la función createWall actual con esta:
 function createWall(scene, x, y) {
     // Posición en píxeles
     const wallX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
     const wallY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
     
-    // Crear un objeto visual para la pared (rectángulo simple)
+    // Crear un objeto visual para la pared con un color más visible
     const wall = scene.add.rectangle(
         wallX, wallY, 
         CONFIG.tileSize, CONFIG.tileSize, 
-        0x333333
+        0x8B4513  // Cambiado a marrón para mejorar visibilidad
     );
     
     // Añadir físicas estáticas
@@ -241,16 +239,14 @@ function createWall(scene, x, y) {
     gameState.wallsLayer.add(wall);
 }
 
-/**
- * Dibuja una baldosa de suelo en la posición especificada
- */
+// Reemplaza la función drawFloorTile actual con esta:
 function drawFloorTile(scene, x, y) {
     // Posición en píxeles
     const floorX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
     const floorY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
     
-    // Crear un objeto visual para el suelo (rectángulo simple)
-    const floorColor = getRandomInt(1, 10) === 1 ? 0x222222 : 0x111111; // Variación ocasional
+    // Crear un objeto visual para el suelo con un color más visible
+    const floorColor = getRandomInt(1, 10) === 1 ? 0x444444 : 0x333333; // Colores más claros
     scene.add.rectangle(
         floorX, floorY, 
         CONFIG.tileSize, CONFIG.tileSize, 

@@ -15,18 +15,28 @@ const loadingInterval = setInterval(() => {
     }
 }, 30);
 
-// Configuración del juego
+// Agregar verificación de Phaser al inicio de main.js
+console.log("Verificando disponibilidad de Phaser...");
+if (typeof Phaser === 'undefined') {
+    console.error("ERROR: Phaser no está disponible. Verifica que se ha cargado correctamente.");
+    alert("Error: No se pudo cargar el motor del juego (Phaser). Por favor, verifica tu conexión a internet y recarga la página.");
+} else {
+    console.log("Phaser disponible:", Phaser.VERSION);
+}
+
+// Modifica la configuración de juego para incluir depuración
 const gameConfig = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
     parent: 'game-container',
     pixelArt: true,
+    backgroundColor: '#444444', // Color de fondo más claro para depuración
     physics: {
         default: 'arcade',
         arcade: {
             gravity: { y: 0 },
-            debug: false
+            debug: true // Activar depuración de física para ver los cuerpos de colisión
         }
     },
     scene: [GameScene]
@@ -60,16 +70,38 @@ function setupEventListeners() {
 /**
  * Inicia el juego
  */
+// Modifica la función startGame para incluir registro de eventos
 function startGame() {
+    console.log("Iniciando juego...");
     document.getElementById('main-menu').style.display = 'none';
     
     // Destruir juego existente si hay uno
     if (window.gameInstance) {
+        console.log("Destruyendo instancia anterior del juego");
         window.gameInstance.destroy(true);
     }
     
-    // Crear nueva instancia del juego
-    window.gameInstance = new Phaser.Game(gameConfig);
+    // Crear nueva instancia del juego con callbacks para monitorear eventos
+    window.gameInstance = new Phaser.Game({
+        ...gameConfig,
+        callbacks: {
+            preBoot: function (game) {
+                console.log('preBoot: Phaser está iniciando');
+            },
+            postBoot: function (game) {
+                console.log('postBoot: Phaser ha iniciado completamente');
+            }
+        }
+    });
+    
+    // Verificar que la instancia se creó correctamente después de un breve retraso
+    setTimeout(() => {
+        if (window.gameInstance && window.gameInstance.isBooted) {
+            console.log("Juego iniciado correctamente");
+        } else {
+            console.error("Problema al iniciar el juego");
+        }
+    }, 1000);
 }
 
 /**
