@@ -12,8 +12,10 @@ body {
 }
 
 #game-container {
-    margin: 20px auto;
-    position: relative;
+    width: 800px;
+    height: 600px;
+    border: 1px solid red; /* Temporal para ver los límites */
+    background-color: #555; /* Temporal para verificar visibilidad */
 }
 
 #ui-container {
