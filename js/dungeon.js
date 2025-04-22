@@ -102,6 +102,27 @@ function createDungeonBackground(scene) {
 }
 
 /**
+ * Configura las colisiones del mapa
+ */
+function setupCollisions(scene) {
+    // Verificar que las capas existan
+    if (!gameState.wallsLayer) {
+        console.error("No se encontró la capa de paredes");
+        return;
+    }
+    
+    // Configurar colisiones con las paredes
+    scene.physics.world.setBounds(0, 0, 
+        CONFIG.mapWidth * CONFIG.tileSize, 
+        CONFIG.mapHeight * CONFIG.tileSize);
+    
+    // Si hay jugador, configurar colisiones con él
+    if (scene.player) {
+        scene.physics.add.collider(scene.player, gameState.wallsLayer);
+    }
+}
+
+/**
  * Configura un mapa básico con paredes
  */
 function setupBasicMap(scene) {
@@ -606,40 +627,32 @@ function createVerticalCorridor(scene, startY, endY, x) {
  * Dibuja una baldosa de suelo en la posición dada
  */
 function drawFloorTile(scene, x, y, type) {
-    // Esta función podría faltar en el código, definirla si no existe
-    if (!window.drawFloorTile) {
-        window.drawFloorTile = function(scene, x, y, type) {
-            // Crear gráfico para el suelo
-            const floorGraphic = scene.add.graphics();
-            
-            // Determinar color según tipo de sala
-            const floorColors = [0x222831, 0x1a1a2e, 0x0f3460, 0x16213e];
-            const floorColor = floorColors[type % floorColors.length];
-            
-            // Dibujar cuadrado
-            floorGraphic.fillStyle(floorColor, 1);
-            floorGraphic.fillRect(
-                x * CONFIG.tileSize, 
-                y * CONFIG.tileSize, 
-                CONFIG.tileSize, 
-                CONFIG.tileSize
-            );
-            
-            // Añadir un poco de variación visual con líneas tenues
-            floorGraphic.lineStyle(1, 0x000000, 0.1);
-            floorGraphic.strokeRect(
-                x * CONFIG.tileSize + 0.5, 
-                y * CONFIG.tileSize + 0.5, 
-                CONFIG.tileSize - 1, 
-                CONFIG.tileSize - 1
-            );
-            
-            floorGraphic.setDepth(0);
-        };
-    }
+    // Crear gráfico para el suelo
+    const floorGraphic = scene.add.graphics();
     
-    // Llamar a la función (ya sea la existente o la que acabamos de definir)
-    window.drawFloorTile(scene, x, y, type);
+    // Determinar color según tipo de sala
+    const floorColors = [0x222831, 0x1a1a2e, 0x0f3460, 0x16213e];
+    const floorColor = floorColors[type % floorColors.length];
+    
+    // Dibujar cuadrado
+    floorGraphic.fillStyle(floorColor, 1);
+    floorGraphic.fillRect(
+        x * CONFIG.tileSize, 
+        y * CONFIG.tileSize, 
+        CONFIG.tileSize, 
+        CONFIG.tileSize
+    );
+    
+    // Añadir un poco de variación visual con líneas tenues
+    floorGraphic.lineStyle(1, 0x000000, 0.1);
+    floorGraphic.strokeRect(
+        x * CONFIG.tileSize + 0.5, 
+        y * CONFIG.tileSize + 0.5, 
+        CONFIG.tileSize - 1, 
+        CONFIG.tileSize - 1
+    );
+    
+    floorGraphic.setDepth(0);
 }
 
 /**
