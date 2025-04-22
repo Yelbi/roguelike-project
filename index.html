@@ -5,60 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mazmorra Infinita - Roguelike</title>
     <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <h1 class="title">Mazmorra Infinita</h1>
     <div id="game-container">
         <div id="ui-container">
             <div id="player-stats">
-                <div class="stat">
-                    <span>Nivel:</span>
-                    <span id="level">1</span>
+                <div class="stat-header">
+                    <span>Aventurero</span>
+                    <span id="level" class="level-display">1</span>
                 </div>
+                
                 <div class="stat">
-                    <span>Salud:</span>
+                    <span><i class="stat-icon health-icon"></i> Salud:</span>
                     <span><span id="health">100</span>/<span id="max-health">100</span></span>
                 </div>
                 <div class="health-bar">
                     <div class="fill" style="width: 100%;"></div>
                 </div>
+                
                 <div class="stat">
-                    <span>Experiencia:</span>
+                    <span><i class="stat-icon xp-icon"></i> Experiencia:</span>
                     <span><span id="xp">0</span>/<span id="next-level">100</span></span>
                 </div>
                 <div class="xp-bar">
                     <div class="fill" style="width: 0%;"></div>
                 </div>
+                
                 <div class="stat">
-                    <span>Ataque:</span>
+                    <span><i class="stat-icon attack-icon"></i> Ataque:</span>
                     <span id="attack">10</span>
                 </div>
+                
                 <div class="stat">
-                    <span>Defensa:</span>
+                    <span><i class="stat-icon defense-icon"></i> Defensa:</span>
                     <span id="defense">5</span>
                 </div>
+                
                 <div class="stat">
-                    <span>Mazmorra:</span>
+                    <span><i class="stat-icon dungeon-icon"></i> Mazmorra:</span>
                     <span id="dungeon-level">1</span>
                 </div>
+                
+                <div class="status-header">Estado</div>
                 <div id="status-effects"></div>
             </div>
         </div>
-        <div id="message-log"></div>
+        
+        <div id="message-log">
+            <div class="log-header">Mensajes</div>
+            <div id="messages-container"></div>
+        </div>
+        
         <div id="inventory">
             <h3>Inventario</h3>
+            <div class="inventory-subtitle">Haz clic para usar un objeto</div>
             <div id="inventory-items"></div>
         </div>
+        
         <div class="controls">
-            <div>WASD o Flechas: Mover</div>
-            <div>E: Inventario</div>
-            <div>Espacio: Atacar/Interactuar</div>
-            <div>P: Pausa</div>
+            <div><strong>WASD</strong> o <strong>Flechas</strong>: Mover</div>
+            <div><strong>E</strong>: Inventario</div>
+            <div><strong>Espacio</strong>: Atacar/Interactuar</div>
+            <div><strong>P</strong>: Pausa</div>
         </div>
     </div>
 
     <div id="loading">
-        <h2>Cargando Mazmorra Infinita...</h2>
+        <h2>Cargando Mazmorra Infinita</h2>
+        <div class="loading-subtitle">Preparando las profundidades...</div>
         <div id="loading-bar">
             <div id="loading-fill"></div>
         </div>
@@ -66,21 +82,48 @@
 
     <div id="main-menu" class="menu">
         <h2>Mazmorra Infinita</h2>
-        <div class="menu-option" id="start-game">Comenzar Partida</div>
-        <div class="menu-option" id="how-to-play">Cómo Jugar</div>
+        <div class="menu-subtitle">Una aventura sin fin en las profundidades</div>
+        <div class="menu-option" id="start-game">
+            <span class="menu-icon">⚔️</span>
+            <span>Comenzar Partida</span>
+        </div>
+        <div class="menu-option" id="how-to-play">
+            <span class="menu-icon">📜</span>
+            <span>Cómo Jugar</span>
+        </div>
     </div>
 
     <div id="pause-menu" class="menu">
         <h2>Juego Pausado</h2>
-        <div class="menu-option" id="resume-game">Continuar</div>
-        <div class="menu-option" id="restart-game">Reiniciar</div>
+        <div class="menu-option" id="resume-game">
+            <span class="menu-icon">▶️</span>
+            <span>Continuar</span>
+        </div>
+        <div class="menu-option" id="restart-game">
+            <span class="menu-icon">🔄</span>
+            <span>Reiniciar</span>
+        </div>
     </div>
 
     <div id="game-over" class="modal">
         <h2>¡Has Muerto!</h2>
-        <p>Nivel alcanzado: <span id="final-level">1</span></p>
-        <p>Nivel de mazmorra: <span id="final-dungeon">1</span></p>
-        <p>Enemigos derrotados: <span id="enemies-killed">0</span></p>
+        <div class="death-message">Tu aventura ha llegado a su fin... por ahora.</div>
+        
+        <div class="stats-container">
+            <div class="stat-row">
+                <span class="stat-label">Nivel alcanzado:</span>
+                <span id="final-level" class="stat-value">1</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Nivel de mazmorra:</span>
+                <span id="final-dungeon" class="stat-value">1</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Enemigos derrotados:</span>
+                <span id="enemies-killed" class="stat-value">0</span>
+            </div>
+        </div>
+        
         <div class="modal-buttons">
             <div class="modal-button" id="try-again">Intentar de nuevo</div>
         </div>
@@ -89,20 +132,28 @@
     <div id="help-modal" class="modal">
         <h2>Cómo Jugar</h2>
         <p>Eres un aventurero en una mazmorra infinita. Tu objetivo es sobrevivir y descender lo más profundo posible.</p>
-        <p><strong>Controles:</strong></p>
-        <ul>
-            <li>WASD o Flechas: Mover al personaje</li>
-            <li>E: Abrir/cerrar inventario</li>
-            <li>Espacio: Atacar (cuando estás junto a un enemigo) o interactuar</li>
-            <li>P: Pausar juego</li>
-        </ul>
-        <p><strong>Consejos:</strong></p>
-        <ul>
-            <li>Busca objetos para mejorar tus estadísticas</li>
-            <li>Derrotar enemigos te da experiencia para subir de nivel</li>
-            <li>Algunas pociones pueden curarte, pero otras pueden ser venenosas</li>
-            <li>Las escaleras te llevan al siguiente nivel de la mazmorra</li>
-        </ul>
+        
+        <div class="help-section">
+            <h3>Controles</h3>
+            <ul>
+                <li><strong>WASD</strong> o <strong>Flechas</strong>: Mover al personaje</li>
+                <li><strong>E</strong>: Abrir/cerrar inventario</li>
+                <li><strong>Espacio</strong>: Atacar (cuando estás junto a un enemigo) o interactuar</li>
+                <li><strong>P</strong>: Pausar juego</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>Consejos</h3>
+            <ul>
+                <li>Busca objetos para mejorar tus estadísticas</li>
+                <li>Derrotar enemigos te da experiencia para subir de nivel</li>
+                <li>Algunas pociones pueden curarte, pero otras pueden ser venenosas</li>
+                <li>Las escaleras te llevan al siguiente nivel de la mazmorra</li>
+                <li>Los enemigos son más fuertes en niveles profundos, pero dan más recompensas</li>
+            </ul>
+        </div>
+        
         <div class="modal-buttons">
             <div class="modal-button confirm" id="close-help">Entendido</div>
         </div>

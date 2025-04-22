@@ -8,6 +8,9 @@
 function generateDungeon(scene) {
     console.log("Iniciando generación de mazmorra...");
     
+    // Crear fondo general
+    createDungeonBackground(scene);
+    
     // Configurar un mapa básico
     setupBasicMap(scene);
     
@@ -28,7 +31,74 @@ function generateDungeon(scene) {
     // Asegurarse de que la primera sala tenga suficiente espacio para el jugador
     ensureFirstRoomIsSafe(scene);
     
+    // Añadir decoraciones
+    addDecorations(scene);
+    
     console.log("Mazmorra generada con éxito");
+}
+
+/**
+ * Crea un fondo para toda la mazmorra
+ */
+function createDungeonBackground(scene) {
+    // Crear un fondo de textura para la mazmorra
+    const background = scene.add.graphics();
+    
+    // Rellenar con color base oscuro
+    background.fillStyle(0x16213e, 1);
+    background.fillRect(0, 0, CONFIG.mapWidth * CONFIG.tileSize, CONFIG.mapHeight * CONFIG.tileSize);
+    
+    // Patrón de mosaico sutil
+    background.lineStyle(1, 0x1a1a2e, 0.5);
+    
+    // Dibujar líneas horizontales
+    for (let y = 0; y < CONFIG.mapHeight; y += 4) {
+        background.beginPath();
+        background.moveTo(0, y * CONFIG.tileSize);
+        background.lineTo(CONFIG.mapWidth * CONFIG.tileSize, y * CONFIG.tileSize);
+        background.strokePath();
+    }
+    
+    // Dibujar líneas verticales
+    for (let x = 0; x < CONFIG.mapWidth; x += 4) {
+        background.beginPath();
+        background.moveTo(x * CONFIG.tileSize, 0);
+        background.lineTo(x * CONFIG.tileSize, CONFIG.mapHeight * CONFIG.tileSize);
+        background.strokePath();
+    }
+    
+    // Añadir puntos aleatorios para simular estrellas/cristales
+    for (let i = 0; i < 200; i++) {
+        const x = getRandomInt(0, CONFIG.mapWidth * CONFIG.tileSize);
+        const y = getRandomInt(0, CONFIG.mapHeight * CONFIG.tileSize);
+        
+        if (Math.random() > 0.7) {
+            // Puntos más brillantes (10%)
+            background.fillStyle(0xffd369, 0.4);
+            background.fillCircle(x, y, 1);
+        } else {
+            // Puntos normales
+            background.fillStyle(0xffffff, 0.2);
+            background.fillCircle(x, y, 0.5);
+        }
+    }
+    
+    // Añadir algunas áreas nebulosas
+    for (let i = 0; i < 15; i++) {
+        const x = getRandomInt(0, CONFIG.mapWidth * CONFIG.tileSize);
+        const y = getRandomInt(0, CONFIG.mapHeight * CONFIG.tileSize);
+        const radius = getRandomInt(100, 300);
+        
+        // Gradiente radial
+        const color = Math.random() > 0.5 ? 0x0f3460 : 0xe94560;
+        const alpha = Math.random() * 0.05;
+        
+        background.fillStyle(color, alpha);
+        background.fillCircle(x, y, radius);
+    }
+    
+    // Establecer profundidad para estar detrás de todo
+    background.setDepth(-10);
 }
 
 /**
@@ -50,19 +120,25 @@ function setupBasicMap(scene) {
         gameState.wallsLayer.clear(true, true);
     }
     gameState.wallsLayer = scene.physics.add.staticGroup();
+    
+    // Crear capa para decoraciones
+    if (gameState.decorationLayer) {
+        gameState.decorationLayer.clear(true, true);
+    }
+    gameState.decorationLayer = scene.physics.add.staticGroup();
 }
 
 /**
  * Genera salas aleatorias en la mazmorra
  */
 function generateRooms(scene) {
-    const roomCount = getRandomInt(5, 10); // Reducido para evitar problemas
+    const roomCount = getRandomInt(6, 12); // Ligero aumento para más variedad
     const minRoomSize = CONFIG.roomMinSize;
     const maxRoomSize = CONFIG.roomMaxSize;
     gameState.rooms = [];
     
     let attempts = 0;
-    const maxAttempts = 100; // Limite de intentos para evitar bucles infinitos
+    const maxAttempts = 150; // Más intentos para colocar salas
     
     while (gameState.rooms.length < roomCount && attempts < maxAttempts) {
         attempts++;
@@ -82,14 +158,15 @@ function generateRooms(scene) {
             width: roomWidth,
             height: roomHeight,
             centerX: Math.floor(roomX + roomWidth / 2),
-            centerY: Math.floor(roomY + roomHeight / 2)
+            centerY: Math.floor(roomY + roomHeight / 2),
+            type: getRandomInt(0, 3) // Tipo de sala para variedad visual
         };
         
         // Verificar superposición con otras salas
         let overlapping = false;
         
         for (const otherRoom of gameState.rooms) {
-            if (roomsOverlap(newRoom, otherRoom)) {
+            if (roomsOverlap(newRoom, otherRoom, 1)) {
                 overlapping = true;
                 break;
             }
@@ -104,14 +181,250 @@ function generateRooms(scene) {
                 for (let x = newRoom.x; x < newRoom.x + newRoom.width; x++) {
                     if (y >= 0 && y < CONFIG.mapHeight && x >= 0 && x < CONFIG.mapWidth) {
                         gameState.map[y][x] = 0; // 0 = suelo
-                        drawFloorTile(scene, x, y);
+                        drawFloorTile(scene, x, y, newRoom.type);
                     }
                 }
             }
+            
+            // Añadir detalles a los bordes de la sala
+            addRoomBorders(scene, newRoom);
         }
     }
     
     console.log(`Generadas ${gameState.rooms.length} salas después de ${attempts} intentos`);
+}
+
+/**
+ * Añade bordes decorativos a las salas
+ */
+function addRoomBorders(scene, room) {
+    // Probabilidad de tener bordes decorativos (70%)
+    if (Math.random() > 0.3) {
+        const borderGraphic = scene.add.graphics();
+        
+        // Elegir color de borde según el tipo de sala
+        let borderColor;
+        switch(room.type) {
+            case 0: borderColor = 0xe94560; break; // Rojo
+            case 1: borderColor = 0x4f8a8b; break; // Verde-azulado
+            case 2: borderColor = 0xffd369; break; // Amarillo
+            default: borderColor = 0x9c42f4; break; // Violeta
+        }
+        
+        // Dibujar líneas en los bordes de la sala
+        borderGraphic.lineStyle(2, borderColor, 0.4);
+        
+        // Coordenadas del rectángulo
+        const x = room.x * CONFIG.tileSize;
+        const y = room.y * CONFIG.tileSize;
+        const width = room.width * CONFIG.tileSize;
+        const height = room.height * CONFIG.tileSize;
+        
+        // Dibujar rectángulo
+        borderGraphic.strokeRect(x, y, width, height);
+        
+        // Añadir esquinas más visibles
+        borderGraphic.lineStyle(3, borderColor, 0.6);
+        
+        // Esquina superior izquierda
+        borderGraphic.beginPath();
+        borderGraphic.moveTo(x, y + 10);
+        borderGraphic.lineTo(x, y);
+        borderGraphic.lineTo(x + 10, y);
+        borderGraphic.strokePath();
+        
+        // Esquina superior derecha
+        borderGraphic.beginPath();
+        borderGraphic.moveTo(x + width - 10, y);
+        borderGraphic.lineTo(x + width, y);
+        borderGraphic.lineTo(x + width, y + 10);
+        borderGraphic.strokePath();
+        
+        // Esquina inferior izquierda
+        borderGraphic.beginPath();
+        borderGraphic.moveTo(x, y + height - 10);
+        borderGraphic.lineTo(x, y + height);
+        borderGraphic.lineTo(x + 10, y + height);
+        borderGraphic.strokePath();
+        
+        // Esquina inferior derecha
+        borderGraphic.beginPath();
+        borderGraphic.moveTo(x + width - 10, y + height);
+        borderGraphic.lineTo(x + width, y + height);
+        borderGraphic.lineTo(x + width, y + height - 10);
+        borderGraphic.strokePath();
+        
+        borderGraphic.setDepth(1);
+    }
+}
+
+/**
+ * Añade decoraciones al mapa
+ */
+function addDecorations(scene) {
+    // Crear varios tipos de decoraciones
+    
+    // 1. Añadir charcos de agua/ácido en algunas posiciones aleatorias
+    for (let i = 0; i < gameState.rooms.length; i++) {
+        const room = gameState.rooms[i];
+        
+        // Solo en algunas salas (30% de probabilidad)
+        if (Math.random() > 0.7) {
+            // Número de charcos
+            const puddleCount = getRandomInt(1, 3);
+            
+            for (let j = 0; j < puddleCount; j++) {
+                // Posición en la sala (lejos de los bordes)
+                const x = getRandomInt(room.x + 2, room.x + room.width - 3);
+                const y = getRandomInt(room.y + 2, room.y + room.height - 3);
+                
+                // Tipo de charco (agua o ácido)
+                const puddleType = Math.random() > 0.5 ? 'water' : 'acid';
+                
+                // Crear gráfico para el charco
+                const puddleGraphic = scene.add.graphics();
+                
+                // Color según tipo
+                if (puddleType === 'water') {
+                    puddleGraphic.fillStyle(0x4f8a8b, 0.6);
+                } else {
+                    puddleGraphic.fillStyle(0x9bdc28, 0.6);
+                }
+                
+                // Dibujar forma irregular de charco
+                puddleGraphic.beginPath();
+                
+                // Centro del charco
+                const centerX = x * CONFIG.tileSize + CONFIG.tileSize / 2;
+                const centerY = y * CONFIG.tileSize + CONFIG.tileSize / 2;
+                const radius = CONFIG.tileSize * 1.2;
+                
+                // Crear forma irregular
+                const points = 8;
+                const angleStep = (Math.PI * 2) / points;
+                
+                for (let p = 0; p < points; p++) {
+                    const angle = p * angleStep;
+                    const radiusVariation = radius * (0.8 + Math.random() * 0.4);
+                    const px = centerX + Math.cos(angle) * radiusVariation;
+                    const py = centerY + Math.sin(angle) * radiusVariation;
+                    
+                    if (p === 0) {
+                        puddleGraphic.moveTo(px, py);
+                    } else {
+                        puddleGraphic.lineTo(px, py);
+                    }
+                }
+                
+                puddleGraphic.closePath();
+                puddleGraphic.fill();
+                
+                // Añadir brillo
+                puddleGraphic.fillStyle(0xffffff, 0.3);
+                puddleGraphic.fillCircle(centerX - radius * 0.3, centerY - radius * 0.3, radius * 0.2);
+                
+                // Establecer profundidad para que esté sobre el suelo pero debajo de todo lo demás
+                puddleGraphic.setDepth(1);
+                
+                // Añadir animación de ondulación
+                scene.tweens.add({
+                    targets: puddleGraphic,
+                    alpha: 0.8,
+                    duration: 2000 + Math.random() * 1000,
+                    yoyo: true,
+                    repeat: -1
+                });
+            }
+        }
+    }
+    
+    // 2. Añadir algunos cristales brillantes en las paredes
+    for (let i = 0; i < 25; i++) {
+        // Buscar una ubicación válida (pared)
+        let x, y;
+        let validPosition = false;
+        let attempts = 0;
+        
+        while (!validPosition && attempts < 50) {
+            attempts++;
+            x = getRandomInt(1, CONFIG.mapWidth - 2);
+            y = getRandomInt(1, CONFIG.mapHeight - 2);
+            
+            // Comprobar si es una pared con espacio libre adyacente
+            if (isWall(x, y) && hasAdjacentFloor(x, y)) {
+                validPosition = true;
+            }
+        }
+        
+        if (validPosition) {
+            // Crear cristal brillante
+            const crystalGraphic = scene.add.graphics();
+            
+            // Color aleatorio para el cristal
+            const crystalColors = [0xe94560, 0x4f8a8b, 0xffd369, 0x9c42f4];
+            const color = crystalColors[getRandomInt(0, crystalColors.length - 1)];
+            
+            // Posición en píxeles
+            const crystalX = x * CONFIG.tileSize + CONFIG.tileSize / 2;
+            const crystalY = y * CONFIG.tileSize + CONFIG.tileSize / 2;
+            
+            // Tamaño aleatorio
+            const crystalSize = CONFIG.tileSize * (0.3 + Math.random() * 0.3);
+            
+            // Dibujar el cristal (forma de diamante)
+            crystalGraphic.fillStyle(color, 0.8);
+            
+            // Forma de cristal
+            crystalGraphic.beginPath();
+            crystalGraphic.moveTo(crystalX, crystalY - crystalSize);
+            crystalGraphic.lineTo(crystalX + crystalSize * 0.7, crystalY);
+            crystalGraphic.lineTo(crystalX, crystalY + crystalSize);
+            crystalGraphic.lineTo(crystalX - crystalSize * 0.7, crystalY);
+            crystalGraphic.closePath();
+            crystalGraphic.fill();
+            
+            // Brillo
+            crystalGraphic.fillStyle(0xffffff, 0.7);
+            crystalGraphic.fillCircle(crystalX - crystalSize * 0.2, crystalY - crystalSize * 0.2, crystalSize * 0.15);
+            
+            // Establecer profundidad
+            crystalGraphic.setDepth(5);
+            
+            // Animación de brillo
+            scene.tweens.add({
+                targets: crystalGraphic,
+                alpha: { from: 0.7, to: 1 },
+                duration: 1500 + Math.random() * 1000,
+                yoyo: true,
+                repeat: -1
+            });
+        }
+    }
+}
+
+/**
+ * Comprueba si hay suelo adyacente a una posición
+ */
+function hasAdjacentFloor(x, y) {
+    const directions = [
+        { x: 0, y: -1 }, // Norte
+        { x: 1, y: 0 },  // Este
+        { x: 0, y: 1 },  // Sur
+        { x: -1, y: 0 }  // Oeste
+    ];
+    
+    for (const dir of directions) {
+        const checkX = x + dir.x;
+        const checkY = y + dir.y;
+        
+        if (checkX >= 0 && checkX < CONFIG.mapWidth && 
+            checkY >= 0 && checkY < CONFIG.mapHeight && 
+            gameState.map[checkY][checkX] === 0) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 /**
@@ -144,7 +457,7 @@ function ensureFirstRoomIsSafe(scene) {
                 for (let x = firstRoom.x; x < firstRoom.x + firstRoom.width; x++) {
                     if (y >= 0 && y < CONFIG.mapHeight && x >= 0 && x < CONFIG.mapWidth) {
                         gameState.map[y][x] = 0; // 0 = suelo
-                        drawFloorTile(scene, x, y);
+                        drawFloorTile(scene, x, y, firstRoom.type);
                     }
                 }
             }
@@ -158,10 +471,49 @@ function ensureFirstRoomIsSafe(scene) {
             for (let x = firstRoom.centerX - safeRadius; x <= firstRoom.centerX + safeRadius; x++) {
                 if (y >= 0 && y < CONFIG.mapHeight && x >= 0 && x < CONFIG.mapWidth) {
                     gameState.map[y][x] = 0; // 0 = suelo
-                    drawFloorTile(scene, x, y);
+                    drawFloorTile(scene, x, y, firstRoom.type);
                 }
             }
         }
+        
+        // Añadir un indicador visual al punto de inicio
+        const startX = firstRoom.centerX * CONFIG.tileSize + CONFIG.tileSize / 2;
+        const startY = firstRoom.centerY * CONFIG.tileSize + CONFIG.tileSize / 2;
+        
+        // Círculo de energía en el punto de inicio
+        const startPortal = scene.add.graphics();
+        
+        // Círculo exterior
+        startPortal.lineStyle(3, 0xffd369, 0.8);
+        startPortal.strokeCircle(startX, startY, CONFIG.tileSize * 0.8);
+        
+        // Círculo interior
+        startPortal.lineStyle(2, 0xe94560, 0.6);
+        startPortal.strokeCircle(startX, startY, CONFIG.tileSize * 0.5);
+        
+        // Destellos
+        for (let i = 0; i < 4; i++) {
+            const angle = (Math.PI / 2) * i;
+            const rayLength = CONFIG.tileSize * 0.4;
+            const rayX = startX + Math.cos(angle) * rayLength;
+            const rayY = startY + Math.sin(angle) * rayLength;
+            
+            startPortal.lineStyle(2, 0xffffff, 0.7);
+            startPortal.beginPath();
+            startPortal.moveTo(startX, startY);
+            startPortal.lineTo(rayX, rayY);
+            startPortal.strokePath();
+        }
+        
+        startPortal.setDepth(1);
+        
+        // Animación de rotación
+        scene.tweens.add({
+            targets: startPortal,
+            angle: 360,
+            duration: 10000,
+            repeat: -1
+        });
     }
 }
 
@@ -181,7 +533,8 @@ function createTestRoom(scene) {
         width: roomWidth,
         height: roomHeight,
         centerX: roomX + Math.floor(roomWidth / 2),
-        centerY: roomY + Math.floor(roomHeight / 2)
+        centerY: roomY + Math.floor(roomHeight / 2),
+        type: 0 // Tipo básico
     };
     
     gameState.rooms = [testRoom];
@@ -191,7 +544,7 @@ function createTestRoom(scene) {
         for (let x = testRoom.x; x < testRoom.x + testRoom.width; x++) {
             if (y >= 0 && y < CONFIG.mapHeight && x >= 0 && x < CONFIG.mapWidth) {
                 gameState.map[y][x] = 0; // 0 = suelo
-                drawFloorTile(scene, x, y);
+                drawFloorTile(scene, x, y, testRoom.type);
             }
         }
     }
@@ -249,231 +602,4 @@ function connectRooms(scene) {
             }
         }
     }
-}
-
-/**
- * Crea un corredor horizontal entre dos puntos
- */
-function createHorizontalCorridor(scene, startX, endX, y) {
-    const start = Math.min(startX, endX);
-    const end = Math.max(startX, endX);
-    
-    for (let x = start; x <= end; x++) {
-        // Establecer como suelo en la matriz del mapa
-        if (y >= 0 && y < CONFIG.mapHeight && x >= 0 && x < CONFIG.mapWidth) {
-            gameState.map[y][x] = 0; // 0 = suelo
-            
-            // También limpiar un poco arriba y abajo para asegurar pasadizos anchos
-            if (y - 1 >= 0) gameState.map[y - 1][x] = 0;
-            if (y + 1 < CONFIG.mapHeight) gameState.map[y + 1][x] = 0;
-            
-            // Dibujar suelo
-            drawFloorTile(scene, x, y);
-            if (y - 1 >= 0) drawFloorTile(scene, x, y - 1);
-            if (y + 1 < CONFIG.mapHeight) drawFloorTile(scene, x, y + 1);
-        }
-    }
-}
-
-/**
- * Crea un corredor vertical entre dos puntos
- */
-function createVerticalCorridor(scene, startY, endY, x) {
-    const start = Math.min(startY, endY);
-    const end = Math.max(startY, endY);
-    
-    for (let y = start; y <= end; y++) {
-        // Establecer como suelo en la matriz del mapa
-        if (y >= 0 && y < CONFIG.mapHeight && x >= 0 && x < CONFIG.mapWidth) {
-            gameState.map[y][x] = 0; // 0 = suelo
-            
-            // También limpiar un poco a los lados para asegurar pasadizos anchos
-            if (x - 1 >= 0) gameState.map[y][x - 1] = 0;
-            if (x + 1 < CONFIG.mapWidth) gameState.map[y][x + 1] = 0;
-            
-            // Dibujar suelo
-            drawFloorTile(scene, x, y);
-            if (x - 1 >= 0) drawFloorTile(scene, x - 1, y);
-            if (x + 1 < CONFIG.mapWidth) drawFloorTile(scene, x + 1, y);
-        }
-    }
-}
-
-/**
- * Configura colisiones para el mapa
- */
-function setupCollisions(scene) {
-    // Actualizar paredes después de generar salas y corredores
-    updateWalls(scene);
-}
-
-/**
- * Actualiza las paredes de la mazmorra
- */
-function updateWalls(scene) {
-    // Limpia todas las paredes existentes
-    if (gameState.wallsLayer) {
-        gameState.wallsLayer.clear(true, true);
-    }
-    
-    // Recrea las paredes basadas en la matriz del mapa
-    for (let y = 0; y < CONFIG.mapHeight; y++) {
-        for (let x = 0; x < CONFIG.mapWidth; x++) {
-            if (isWall(x, y)) {
-                createWall(scene, x, y);
-            }
-        }
-    }
-}
-
-/**
- * Comprueba si una posición es una pared
- */
-function isWall(x, y) {
-    // Borde del mapa
-    if (x === 0 || x === CONFIG.mapWidth - 1 || y === 0 || y === CONFIG.mapHeight - 1) {
-        return true;
-    }
-    
-    // Comprobar la matriz del mapa
-    return gameState.map[y][x] === 1;
-}
-
-/**
- * Verifica si una posición es un suelo válido y no una pared
- */
-function isValidFloor(x, y) {
-    if (x < 0 || x >= CONFIG.mapWidth || y < 0 || y >= CONFIG.mapHeight) {
-        return false;
-    }
-    return gameState.map[y][x] === 0;
-}
-
-/**
- * Encuentra un punto aleatorio en una sala
- */
-function getRandomPointInRoom(room) {
-    // Usar puntos un poco alejados de los bordes para mayor seguridad
-    const x = getRandomInt(room.x + 1, room.x + room.width - 2);
-    const y = getRandomInt(room.y + 1, room.y + room.height - 2);
-    return { x, y };
-}
-
-/**
- * Crea una pared en una posición específica
- */
-function createWall(scene, x, y) {
-    // Posición en píxeles
-    const wallX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
-    const wallY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
-    
-    // Crear un rectángulo para la pared con un color más visible
-    const wall = scene.add.rectangle(
-        wallX, wallY, 
-        CONFIG.tileSize, CONFIG.tileSize, 
-        0x8B4513  // Marrón para mejorar visibilidad
-    );
-    
-    // Añadir físicas estáticas
-    scene.physics.add.existing(wall, true);
-    
-    // Ajustar el tamaño del cuerpo físico para permitir un poco de margen
-    wall.body.setSize(CONFIG.tileSize - 2, CONFIG.tileSize - 2);
-    
-    // Añadir al grupo de paredes
-    gameState.wallsLayer.add(wall);
-}
-
-/**
- * Dibuja una baldosa de suelo en una posición específica
- */
-function drawFloorTile(scene, x, y) {
-    // Posición en píxeles
-    const floorX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
-    const floorY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
-    
-    // Crear un rectángulo para el suelo con un color más visible
-    const floorColor = getRandomInt(1, 10) === 1 ? 0x444444 : 0x333333;
-    scene.add.rectangle(
-        floorX, floorY, 
-        CONFIG.tileSize, CONFIG.tileSize, 
-        floorColor
-    ).setDepth(-1);
-}
-
-/**
- * Coloca las escaleras en la última sala
- */
-function placeStairs(scene) {
-    if (gameState.rooms.length > 0) {
-        const lastRoom = gameState.rooms[gameState.rooms.length - 1];
-        
-        // Buscar un punto seguro alejado de las paredes
-        let x = lastRoom.centerX;
-        let y = lastRoom.centerY;
-        
-        // Verificar que el punto es válido
-        if (!isValidFloor(x, y)) {
-            // Buscar un punto alternativo
-            const alternativePoint = findSafeLocationInRoom(lastRoom);
-            if (alternativePoint) {
-                x = alternativePoint.x;
-                y = alternativePoint.y;
-            }
-        }
-        
-        // Convertir a coordenadas en píxeles
-        const stairsX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
-        const stairsY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
-        
-        // Crear gráfico personalizado para las escaleras
-        const stairsGraphic = scene.add.graphics();
-        stairsGraphic.fillStyle(0xf1c40f, 1);
-        stairsGraphic.fillCircle(0, 0, CONFIG.tileSize/2);
-        stairsGraphic.lineStyle(3, 0xf39c12, 1);
-        stairsGraphic.beginPath();
-        stairsGraphic.arc(0, 0, CONFIG.tileSize/3, 0, Math.PI * 1.5);
-        stairsGraphic.stroke();
-        
-        // Usar generateTexture para crear una textura a partir del gráfico
-        const stairsTexture = stairsGraphic.generateTexture('stairs_texture', CONFIG.tileSize, CONFIG.tileSize);
-        stairsGraphic.destroy();
-        
-        // Crear sprite de escaleras con físicas
-        gameState.stairs = scene.physics.add.sprite(stairsX, stairsY, 'stairs_texture');
-        gameState.stairs.setScale(0.8);
-        gameState.stairs.depth = 1;
-        
-        // Añadir animación a las escaleras
-        scene.tweens.add({
-            targets: gameState.stairs,
-            angle: 360,
-            duration: 10000,
-            repeat: -1
-        });
-        
-        console.log(`Escaleras colocadas en: X=${stairsX}, Y=${stairsY}`);
-    }
-}
-
-/**
- * Encuentra una ubicación segura dentro de una sala
- */
-function findSafeLocationInRoom(room) {
-    // Primero intentar con el centro
-    if (isValidFloor(room.centerX, room.centerY)) {
-        return { x: room.centerX, y: room.centerY };
-    }
-    
-    // Si el centro no es válido, buscar en toda la sala
-    for (let y = room.y + 1; y < room.y + room.height - 1; y++) {
-        for (let x = room.x + 1; x < room.x + room.width - 1; x++) {
-            if (isValidFloor(x, y)) {
-                return { x, y };
-            }
-        }
-    }
-    
-    // Si no se encuentra ningún punto válido, devolver null
-    return null;
 }
