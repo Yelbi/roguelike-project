@@ -169,68 +169,7 @@ function enemyAttack(scene, enemy, player) {
 /**
  * Maneja ataques del jugador a enemigos
  */
-function attackEnemy(scene, enemy) {
-    // Calcular daño basado en estadísticas
-    const baseDamage = gameState.playerStats.attack;
-    const defense = enemy.defense;
-    const damage = Math.max(1, baseDamage - defense);
-    
-    // Crear gráfico para la animación de ataque
-    const attackGraphic = scene.add.graphics();
-    attackGraphic.fillStyle(0x3498db, 0.8);
-    attackGraphic.fillCircle(0, 0, 20);
-    attackGraphic.fillStyle(0x2980b9, 0.8);
-    attackGraphic.fillCircle(0, 0, 12);
-    attackGraphic.fillStyle(0xffffff, 0.9);
-    attackGraphic.fillCircle(0, 0, 5);
-    
-    // Generar textura para el ataque
-    const attackTextureKey = 'player_attack_texture';
-    if (!scene.textures.exists(attackTextureKey)) {
-        attackGraphic.generateTexture(attackTextureKey, 40, 40);
-    }
-    attackGraphic.destroy();
-    
-    // Crear el sprite del ataque
-    const attackFx = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, attackTextureKey);
-    attackFx.setScale(0.5);
-    attackFx.depth = 15;
-    
-    // Animación de la explosión
-    scene.tweens.add({
-        targets: attackFx,
-        scale: 1.2,
-        alpha: 0,
-        duration: 300,
-        onComplete: () => {
-            attackFx.destroy();
-        }
-    });
-    
-    // Reproducir sonido
-    scene.sounds.hit();
-    
-    // Aplicar daño
-    enemy.health -= damage;
-    
-    // Sacudir al enemigo
-    scene.tweens.add({
-        targets: enemy.sprite,
-        x: enemy.sprite.x + getRandomInt(-5, 5),
-        y: enemy.sprite.y + getRandomInt(-5, 5),
-        duration: 50,
-        yoyo: true,
-        repeat: 3
-    });
-    
-    // Mensaje
-    addMessage(`Atacas al enemigo y causas ${damage} puntos de daño.`, "combat");
-    
-    // Comprobar si el enemigo ha muerto
-    if (enemy.health <= 0) {
-        defeatEnemy(scene, enemy);
-    }
-}
+EnemyModule.attackEnemy(scene, enemy);
 
 /**
  * Maneja la derrota de un enemigo
