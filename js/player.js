@@ -6,9 +6,10 @@
  * Crea y configura al jugador
  */
 function createPlayer(scene) {
-    // Colocar al jugador en la primera sala o en el centro del mapa si no hay salas
+    // Encontrar una posición segura para el jugador
     let playerX, playerY;
     
+    // Intentar colocar al jugador en la primera sala
     if (gameState.rooms.length > 0) {
         const startRoom = gameState.rooms[0];
         playerX = startRoom.centerX * CONFIG.tileSize + (CONFIG.tileSize / 2);
@@ -26,14 +27,14 @@ function createPlayer(scene) {
     
     // Dibujar un círculo brillante para el jugador
     playerGraphic.fillStyle(0xff0000, 1); // Rojo brillante
-    playerGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.6);
+    playerGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.4);
     
     // Añadir un borde para mayor visibilidad
     playerGraphic.lineStyle(2, 0xffff00, 1);
-    playerGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.6);
+    playerGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.4);
     
     // Crear textura para el jugador
-    const playerTexture = playerGraphic.generateTexture('player_texture', CONFIG.tileSize * 2, CONFIG.tileSize * 2);
+    const playerTexture = playerGraphic.generateTexture('player_texture', CONFIG.tileSize, CONFIG.tileSize);
     playerGraphic.destroy();
     
     // Crear sprite del jugador con físicas
@@ -43,6 +44,10 @@ function createPlayer(scene) {
     player.setScale(0.8);
     player.setDepth(20); // Asegurar que esté por encima de todo
     player.setCollideWorldBounds(true);
+    
+    // Hacer el cuerpo físico del jugador un poco más pequeño que su sprite visual
+    player.body.setSize(CONFIG.tileSize * 0.6, CONFIG.tileSize * 0.6);
+    player.body.setOffset(CONFIG.tileSize * 0.2, CONFIG.tileSize * 0.2);
     
     // Configurar la cámara para seguir al jugador
     scene.cameras.main.setBounds(0, 0, 
@@ -57,13 +62,13 @@ function createPlayer(scene) {
     scene.cameras.main.centerOn(playerX, playerY);
     
     // Agregar efecto de "luz" alrededor del jugador
-    const light = scene.add.circle(playerX, playerY, CONFIG.tileSize * 3, 0xffffff, 0.2);
+    const light = scene.add.circle(playerX, playerY, CONFIG.tileSize * 4, 0xffffff, 0.15);
     light.setDepth(5);
     
     // Hacer que la luz siga al jugador
     scene.tweens.add({
         targets: light,
-        alpha: 0.3,
+        alpha: 0.25,
         duration: 1000,
         yoyo: true,
         repeat: -1
@@ -71,6 +76,16 @@ function createPlayer(scene) {
     
     // Actualizar posición de la luz cuando el jugador se mueve
     player.light = light;
+    
+    // Añadir un efecto de aparición
+    player.setAlpha(0);
+    scene.tweens.add({
+        targets: player,
+        alpha: 1,
+        scale: 1,
+        duration: 500,
+        ease: 'Power2'
+    });
     
     return player;
 }
@@ -111,12 +126,35 @@ function handlePlayerMovement(scene, player, cursors, wasd) {
         player.light.x = player.x;
         player.light.y = player.y;
     }
+    
+    // Agregar pequeña animación de movimiento
+    if (player.body.velocity.x !== 0 || player.body.velocity.y !== 0) {
+        if (!player.isMoving) {
+            player.isMoving = true;
+            scene.tweens.add({
+                targets: player,
+                scaleX: 0.9,
+                scaleY: 0.9,
+                duration: 300,
+                yoyo: true,
+                repeat: -1
+            });
+        }
+    } else if (player.isMoving) {
+        player.isMoving = false;
+        scene.tweens.killTweensOf(player);
+        player.setScale(0.8);
+    }
 }
 
 /**
  * Muerte del jugador
  */
 function playerDeath(scene) {
+    // Detener al jugador y eliminar cualquier tween en progreso
+    scene.player.body.setVelocity(0, 0);
+    scene.tweens.killTweensOf(scene.player);
+    
     // Crear efecto de explosión
     const explosion = scene.add.sprite(scene.player.x, scene.player.y, 'player_texture');
     
@@ -148,14 +186,27 @@ function playerDeath(scene) {
         }
     });
     
+    // Ocultar al jugador con una animación de desvanecimiento
+    scene.tweens.add({
+        targets: scene.player,
+        alpha: 0,
+        scale: 1.5,
+        duration: 500
+    });
+    
+    // Sacudir la cámara para dar efecto dramático
+    scene.cameras.main.shake(500, 0.03);
+    
     // Reproducir sonido (si existe)
     scene.sounds.playerDeath();
     
     // Mensaje
     addMessage("¡Has muerto! Pulsa el botón para intentarlo de nuevo.", "combat");
     
-    // Game Over
-    showGameOver();
+    // Esperar un momento antes de mostrar la pantalla de Game Over
+    scene.time.delayedCall(800, () => {
+        showGameOver();
+    });
 }
 
 /**
@@ -176,10 +227,12 @@ function checkLevelUp() {
         // Mensaje
         addMessage(`¡Has subido al nivel ${gameState.playerStats.level}! Tus estadísticas han mejorado.`, "level");
         
-        // Reproducir sonido (si existe)
-        if (window.gameInstance && window.gameInstance.sound && window.gameInstance.sound.sounds) {
-            const levelupSound = window.gameInstance.sound.sounds.find(s => s.key === 'levelup');
-            if (levelupSound) levelupSound.play();
+        // Reproducir sonido
+        if (window.gameInstance && window.gameInstance.scene) {
+            const scene = window.gameInstance.scene.scenes.find(s => s.scene.key === 'GameScene');
+            if (scene && scene.sounds) {
+                scene.sounds.levelup();
+            }
         }
         
         // Comprobar si hay que volver a subir de nivel
