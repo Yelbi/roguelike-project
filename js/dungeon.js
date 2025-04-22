@@ -9,48 +9,7 @@ function generateDungeon(scene) {
     // Añadir mensaje para verificar que la generación se está ejecutando
     console.log("Iniciando generación de mazmorra...");
     
-    // Crear una sala de prueba forzada para verificar el renderizado
-    // Esta sala ocupará casi todo el mapa para facilitar su visualización
-    gameState.map = [];
-    for (let y = 0; y < CONFIG.mapHeight; y++) {
-        const row = [];
-        for (let x = 0; x < CONFIG.mapWidth; x++) {
-            // Hacer que el centro del mapa sea suelo y el borde paredes
-            if (x > 2 && x < CONFIG.mapWidth - 3 && y > 2 && y < CONFIG.mapHeight - 3) {
-                row.push(0); // Suelo
-            } else {
-                row.push(1); // Pared
-            }
-        }
-        gameState.map.push(row);
-    }
-    
-    // Crear una sola sala que ocupe casi todo el mapa
-    const testRoom = {
-        x: 3,
-        y: 3,
-        width: CONFIG.mapWidth - 6,
-        height: CONFIG.mapHeight - 6,
-        centerX: Math.floor(CONFIG.mapWidth / 2),
-        centerY: Math.floor(CONFIG.mapHeight / 2)
-    };
-    
-    gameState.rooms = [testRoom];
-    
-    // Dibujar esta sala simple
-    for (let y = 0; y < CONFIG.mapHeight; y++) {
-        for (let x = 0; x < CONFIG.mapWidth; x++) {
-            if (gameState.map[y][x] === 0) {
-                drawFloorTile(scene, x, y);
-            } else {
-                createWall(scene, x, y);
-            }
-        }
-    }
-    
-    console.log("Mazmorra generada con éxito");
-
-    // Crear un mapa básico (sin usar tilemap para no depender de assets externos)
+    // Configurar un mapa básico
     setupBasicMap(scene);
     
     // Generar salas
@@ -61,6 +20,8 @@ function generateDungeon(scene) {
     
     // Establecer colisiones
     setupCollisions(scene);
+    
+    console.log("Mazmorra generada con éxito");
 }
 
 /**
@@ -79,16 +40,6 @@ function setupBasicMap(scene) {
     
     // Crear capa de paredes
     gameState.wallsLayer = scene.physics.add.staticGroup();
-    
-    // Generar paredes iniciales alrededor del mapa
-    for (let y = 0; y < CONFIG.mapHeight; y++) {
-        for (let x = 0; x < CONFIG.mapWidth; x++) {
-            // Crear gráfico de pared
-            if (isWall(x, y)) {
-                createWall(scene, x, y);
-            }
-        }
-    }
 }
 
 /**
@@ -99,6 +50,12 @@ function generateRooms(scene) {
     const minRoomSize = CONFIG.roomMinSize;
     const maxRoomSize = CONFIG.roomMaxSize;
     gameState.rooms = [];
+    
+    // Si no se pueden generar salas, crear al menos una sala simple
+    if (roomCount <= 0) {
+        createTestRoom(scene);
+        return;
+    }
     
     for (let i = 0; i < roomCount; i++) {
         const roomWidth = getRandomInt(minRoomSize, maxRoomSize);
@@ -135,15 +92,50 @@ function generateRooms(scene) {
                 for (let x = newRoom.x; x < newRoom.x + newRoom.width; x++) {
                     gameState.map[y][x] = 0; // 0 = suelo
                     
-                    // Eliminar paredes en esta posición si existen
-                    removeWallAt(scene, x, y);
-                    
                     // Dibujar suelo
                     drawFloorTile(scene, x, y);
                 }
             }
         }
     }
+    
+    // Si no se pudo crear ninguna sala, crear una sala de prueba
+    if (gameState.rooms.length === 0) {
+        createTestRoom(scene);
+    }
+}
+
+/**
+ * Crea una sala de prueba simple para asegurar que haya al menos una sala
+ */
+function createTestRoom(scene) {
+    const roomWidth = Math.floor(CONFIG.mapWidth / 2);
+    const roomHeight = Math.floor(CONFIG.mapHeight / 2);
+    const roomX = Math.floor(CONFIG.mapWidth / 4);
+    const roomY = Math.floor(CONFIG.mapHeight / 4);
+    
+    const testRoom = {
+        x: roomX,
+        y: roomY,
+        width: roomWidth,
+        height: roomHeight,
+        centerX: Math.floor(roomX + roomWidth / 2),
+        centerY: Math.floor(roomY + roomHeight / 2)
+    };
+    
+    gameState.rooms = [testRoom];
+    
+    // Excavar la sala en el mapa
+    for (let y = testRoom.y; y < testRoom.y + testRoom.height; y++) {
+        for (let x = testRoom.x; x < testRoom.x + testRoom.width; x++) {
+            if (y >= 0 && y < CONFIG.mapHeight && x >= 0 && x < CONFIG.mapWidth) {
+                gameState.map[y][x] = 0; // 0 = suelo
+                drawFloorTile(scene, x, y);
+            }
+        }
+    }
+    
+    console.log("Creada sala de prueba:", testRoom);
 }
 
 /**
@@ -179,9 +171,6 @@ function createHorizontalCorridor(scene, startX, endX, y) {
         if (y >= 0 && y < CONFIG.mapHeight && x >= 0 && x < CONFIG.mapWidth) {
             gameState.map[y][x] = 0; // 0 = suelo
             
-            // Eliminar pared en esta posición si existe
-            removeWallAt(scene, x, y);
-            
             // Dibujar suelo
             drawFloorTile(scene, x, y);
         }
@@ -199,9 +188,6 @@ function createVerticalCorridor(scene, startY, endY, x) {
         // Establecer como suelo en la matriz del mapa
         if (y >= 0 && y < CONFIG.mapHeight && x >= 0 && x < CONFIG.mapWidth) {
             gameState.map[y][x] = 0; // 0 = suelo
-            
-            // Eliminar pared en esta posición si existe
-            removeWallAt(scene, x, y);
             
             // Dibujar suelo
             drawFloorTile(scene, x, y);
@@ -222,7 +208,9 @@ function setupCollisions(scene) {
  */
 function updateWalls(scene) {
     // Limpia todas las paredes existentes
-    gameState.wallsLayer.clear(true, true);
+    if (gameState.wallsLayer) {
+        gameState.wallsLayer.clear(true, true);
+    }
     
     // Recrea las paredes basadas en la matriz del mapa
     for (let y = 0; y < CONFIG.mapHeight; y++) {
@@ -248,49 +236,37 @@ function isWall(x, y) {
 }
 
 /**
- * Elimina la pared en una posición específica
+ * Crea una pared en una posición específica
  */
-function removeWallAt(scene, x, y) {
-    // Buscar y eliminar la pared en esa posición
-    gameState.wallsLayer.getChildren().forEach(wall => {
-        if (wall.x === x * CONFIG.tileSize + (CONFIG.tileSize / 2) && 
-            wall.y === y * CONFIG.tileSize + (CONFIG.tileSize / 2)) {
-            wall.destroy();
-        }
-    });
-}
-
-// Reemplaza la función createWall actual con esta:
 function createWall(scene, x, y) {
     // Posición en píxeles
     const wallX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
     const wallY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
     
-    // Crear un objeto visual para la pared con un color más visible
+    // Crear un rectángulo para la pared con un color más visible
     const wall = scene.add.rectangle(
         wallX, wallY, 
         CONFIG.tileSize, CONFIG.tileSize, 
-        0x8B4513  // Cambiado a marrón para mejorar visibilidad
+        0x8B4513  // Marrón para mejorar visibilidad
     );
     
     // Añadir físicas estáticas
     scene.physics.add.existing(wall, true);
     
-    // Ajustar el tamaño del cuerpo físico
-    wall.body.setSize(CONFIG.tileSize, CONFIG.tileSize);
-    
     // Añadir al grupo de paredes
     gameState.wallsLayer.add(wall);
 }
 
-// Reemplaza la función drawFloorTile actual con esta:
+/**
+ * Dibuja una baldosa de suelo en una posición específica
+ */
 function drawFloorTile(scene, x, y) {
     // Posición en píxeles
     const floorX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
     const floorY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
     
-    // Crear un objeto visual para el suelo con un color más visible
-    const floorColor = getRandomInt(1, 10) === 1 ? 0x444444 : 0x333333; // Colores más claros
+    // Crear un rectángulo para el suelo con un color más visible
+    const floorColor = getRandomInt(1, 10) === 1 ? 0x444444 : 0x333333;
     scene.add.rectangle(
         floorX, floorY, 
         CONFIG.tileSize, CONFIG.tileSize, 
@@ -309,13 +285,19 @@ function placeStairs(scene) {
         
         // Crear gráfico personalizado para las escaleras
         const stairsGraphic = scene.add.graphics();
-        SPRITES.stairs.render(stairsGraphic, 0, 0, CONFIG.tileSize);
+        stairsGraphic.fillStyle(0xf1c40f, 1);
+        stairsGraphic.fillCircle(0, 0, CONFIG.tileSize/2);
+        stairsGraphic.lineStyle(3, 0xf39c12, 1);
+        stairsGraphic.beginPath();
+        stairsGraphic.arc(0, 0, CONFIG.tileSize/3, 0, Math.PI * 1.5);
+        stairsGraphic.stroke();
         
-        // Crear sprite de escaleras con físicas
-        gameState.stairs = scene.physics.add.sprite(x, y, '__DEFAULT');
-        gameState.stairs.setTexture(stairsGraphic.generateTexture());
+        // Usar generateTexture para crear una textura a partir del gráfico
+        const stairsTexture = stairsGraphic.generateTexture('stairs_texture', CONFIG.tileSize, CONFIG.tileSize);
         stairsGraphic.destroy();
         
+        // Crear sprite de escaleras con físicas
+        gameState.stairs = scene.physics.add.sprite(x, y, 'stairs_texture');
         gameState.stairs.setScale(0.8);
         gameState.stairs.depth = 1;
         

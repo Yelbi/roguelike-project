@@ -37,18 +37,86 @@ function placeItems(scene) {
             const itemX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
             const itemY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
             
-            // Usando Graphics para crear sprites personalizados en lugar de depender de assets externos
-            const item = scene.add.graphics();
-            SPRITES.item.render(item, 0, 0, CONFIG.tileSize * 0.8, itemType);
+            // Crear gráfico personalizado para el objeto
+            const itemGraphic = scene.add.graphics();
             
-            // Convertir a sprite con físicas
-            const itemSprite = scene.physics.add.existing(
-                scene.add.sprite(itemX, itemY, '__DEFAULT')
-            );
+            // Colores según tipo de objeto
+            const colors = [0x2ecc71, 0x3498db, 0xf1c40f, 0x9b59b6, 0x1abc9c, 0xe67e22];
+            const color = colors[itemType % colors.length];
+            
+            // Dibujar el objeto según su tipo
+            if (itemType === 0) { // Poción de salud
+                // Botella
+                itemGraphic.fillStyle(color, 1);
+                itemGraphic.beginPath();
+                itemGraphic.arc(0, -CONFIG.tileSize/4, CONFIG.tileSize/4, Math.PI, 2 * Math.PI);
+                itemGraphic.fillPath();
+                itemGraphic.fillRect(-CONFIG.tileSize/4, -CONFIG.tileSize/4, CONFIG.tileSize/2, CONFIG.tileSize/2);
+                
+                // Líquido
+                itemGraphic.fillStyle(0xe74c3c, 1);
+                itemGraphic.fillRect(-CONFIG.tileSize/5, -CONFIG.tileSize/6, 2*CONFIG.tileSize/5, CONFIG.tileSize/3);
+            } else if (itemType === 1) { // Poción de fuerza
+                // Espada
+                itemGraphic.fillStyle(color, 1);
+                itemGraphic.beginPath();
+                itemGraphic.moveTo(0, -CONFIG.tileSize/2);
+                itemGraphic.lineTo(0, CONFIG.tileSize/3);
+                itemGraphic.lineTo(-CONFIG.tileSize/5, CONFIG.tileSize/2);
+                itemGraphic.lineTo(CONFIG.tileSize/5, CONFIG.tileSize/2);
+                itemGraphic.lineTo(0, CONFIG.tileSize/3);
+                itemGraphic.fillPath();
+                
+                // Empuñadura
+                itemGraphic.fillStyle(0xf39c12, 1);
+                itemGraphic.fillRect(-CONFIG.tileSize/4, -CONFIG.tileSize/2, CONFIG.tileSize/2, CONFIG.tileSize/6);
+            } else if (itemType === 2) { // Poción de defensa
+                // Escudo
+                itemGraphic.fillStyle(color, 1);
+                itemGraphic.beginPath();
+                itemGraphic.moveTo(0, -CONFIG.tileSize/2);
+                itemGraphic.lineTo(-CONFIG.tileSize/2, -CONFIG.tileSize/4);
+                itemGraphic.lineTo(-CONFIG.tileSize/2, CONFIG.tileSize/4);
+                itemGraphic.lineTo(0, CONFIG.tileSize/2);
+                itemGraphic.lineTo(CONFIG.tileSize/2, CONFIG.tileSize/4);
+                itemGraphic.lineTo(CONFIG.tileSize/2, -CONFIG.tileSize/4);
+                itemGraphic.closePath();
+                itemGraphic.fillPath();
+                
+                // Detalles del escudo
+                itemGraphic.fillStyle(0x7f8c8d, 1);
+                itemGraphic.beginPath();
+                itemGraphic.arc(0, 0, CONFIG.tileSize/4, 0, Math.PI * 2);
+                itemGraphic.fillPath();
+            } else {
+                // Objetos genéricos (gemas)
+                itemGraphic.fillStyle(color, 1);
+                itemGraphic.beginPath();
+                itemGraphic.moveTo(0, -CONFIG.tileSize/2);
+                itemGraphic.lineTo(-CONFIG.tileSize/2, 0);
+                itemGraphic.lineTo(0, CONFIG.tileSize/2);
+                itemGraphic.lineTo(CONFIG.tileSize/2, 0);
+                itemGraphic.closePath();
+                itemGraphic.fillPath();
+                
+                // Brillo
+                itemGraphic.fillStyle(0xffffff, 1);
+                itemGraphic.beginPath();
+                itemGraphic.arc(-CONFIG.tileSize/6, -CONFIG.tileSize/6, CONFIG.tileSize/8, 0, Math.PI * 2);
+                itemGraphic.fillPath();
+            }
+            
+            // Crear textura para el objeto
+            const itemTextureKey = `item_${itemType}_texture`;
+            if (!scene.textures.exists(itemTextureKey)) {
+                itemGraphic.generateTexture(itemTextureKey, CONFIG.tileSize, CONFIG.tileSize);
+            }
+            itemGraphic.destroy();
+            
+            // Crear sprite con físicas
+            const itemSprite = scene.physics.add.sprite(itemX, itemY, itemTextureKey);
             itemSprite.setScale(0.8);
             itemSprite.depth = 2;
-            itemSprite.setTexture(item.generateTexture());
-            item.destroy();
             
             // Añadir al grupo de físicas
             gameState.itemsGroup.add(itemSprite);
@@ -79,17 +147,14 @@ function placeItems(scene) {
 /**
  * Recoge un objeto al colisionar con él
  */
-function collectItem(player, itemSprite) {
+function collectItem(scene, player, itemSprite) {
     const itemIndex = gameState.items.findIndex(item => item.sprite === itemSprite);
     
     if (itemIndex !== -1) {
         const item = gameState.items[itemIndex];
         
-        // Reproducir sonido de recogida si está disponible
-        if (window.gameInstance && window.gameInstance.sound.sounds) {
-            const pickupSound = window.gameInstance.sound.sounds.find(s => s.key === 'pickup');
-            if (pickupSound) pickupSound.play();
-        }
+        // Reproducir sonido de recogida
+        scene.sounds.pickup();
         
         // Añadir al inventario
         gameState.inventory.push({
@@ -158,10 +223,12 @@ function useItem(index) {
                 break;
         }
         
-        // Reproducir sonido de uso si está disponible
-        if (window.gameInstance && window.gameInstance.sound.sounds) {
-            const pickupSound = window.gameInstance.sound.sounds.find(s => s.key === 'pickup');
-            if (pickupSound) pickupSound.play();
+        // Reproducir sonido
+        if (window.gameInstance && window.gameInstance.scene) {
+            const scene = window.gameInstance.scene.scenes.find(s => s.scene.key === 'GameScene');
+            if (scene && scene.sounds) {
+                scene.sounds.pickup();
+            }
         }
         
         // Eliminar el objeto del inventario
@@ -185,17 +252,53 @@ function dropItem(scene, x, y) {
     );
     
     // Crear gráfico personalizado para el objeto
-    const item = scene.add.graphics();
-    SPRITES.item.render(item, 0, 0, CONFIG.tileSize * 0.8, itemType);
+    const itemGraphic = scene.add.graphics();
     
-    // Convertir a sprite con físicas
-    const itemSprite = scene.physics.add.existing(
-        scene.add.sprite(x, y, '__DEFAULT')
-    );
+    // Colores según tipo de objeto
+    const colors = [0x2ecc71, 0x3498db, 0xf1c40f, 0x9b59b6, 0x1abc9c, 0xe67e22];
+    const color = colors[itemType % colors.length];
+    
+    // Dibujar el objeto según su tipo
+    if (itemType === 0) { // Poción de salud
+        // Botella
+        itemGraphic.fillStyle(color, 1);
+        itemGraphic.beginPath();
+        itemGraphic.arc(0, -CONFIG.tileSize/4, CONFIG.tileSize/4, Math.PI, 2 * Math.PI);
+        itemGraphic.fillPath();
+        itemGraphic.fillRect(-CONFIG.tileSize/4, -CONFIG.tileSize/4, CONFIG.tileSize/2, CONFIG.tileSize/2);
+        
+        // Líquido
+        itemGraphic.fillStyle(0xe74c3c, 1);
+        itemGraphic.fillRect(-CONFIG.tileSize/5, -CONFIG.tileSize/6, 2*CONFIG.tileSize/5, CONFIG.tileSize/3);
+    } else {
+        // Objetos genéricos (gemas)
+        itemGraphic.fillStyle(color, 1);
+        itemGraphic.beginPath();
+        itemGraphic.moveTo(0, -CONFIG.tileSize/2);
+        itemGraphic.lineTo(-CONFIG.tileSize/2, 0);
+        itemGraphic.lineTo(0, CONFIG.tileSize/2);
+        itemGraphic.lineTo(CONFIG.tileSize/2, 0);
+        itemGraphic.closePath();
+        itemGraphic.fillPath();
+        
+        // Brillo
+        itemGraphic.fillStyle(0xffffff, 1);
+        itemGraphic.beginPath();
+        itemGraphic.arc(-CONFIG.tileSize/6, -CONFIG.tileSize/6, CONFIG.tileSize/8, 0, Math.PI * 2);
+        itemGraphic.fillPath();
+    }
+    
+    // Crear textura para el objeto
+    const itemTextureKey = `item_${itemType}_texture`;
+    if (!scene.textures.exists(itemTextureKey)) {
+        itemGraphic.generateTexture(itemTextureKey, CONFIG.tileSize, CONFIG.tileSize);
+    }
+    itemGraphic.destroy();
+    
+    // Crear sprite con físicas
+    const itemSprite = scene.physics.add.sprite(x, y, itemTextureKey);
     itemSprite.setScale(0.8);
     itemSprite.depth = 2;
-    itemSprite.setTexture(item.generateTexture());
-    item.destroy();
     
     // Añadir al grupo de físicas
     gameState.itemsGroup.add(itemSprite);
@@ -223,5 +326,5 @@ function dropItem(scene, x, y) {
     // Mensaje
     addMessage(`Has encontrado un objeto: ${itemData.name}.`, "item");
     
-    return itemData;
-}
+        return itemData;
+    }

@@ -15,7 +15,7 @@ const loadingInterval = setInterval(() => {
     }
 }, 30);
 
-// Agregar verificación de Phaser al inicio de main.js
+// Verificar disponibilidad de Phaser al inicio
 console.log("Verificando disponibilidad de Phaser...");
 if (typeof Phaser === 'undefined') {
     console.error("ERROR: Phaser no está disponible. Verifica que se ha cargado correctamente.");
@@ -24,19 +24,19 @@ if (typeof Phaser === 'undefined') {
     console.log("Phaser disponible:", Phaser.VERSION);
 }
 
-// Modifica la configuración de juego para incluir depuración
+// Configuración del juego
 const gameConfig = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
     parent: 'game-container',
     pixelArt: true,
-    backgroundColor: '#444444', // Color de fondo más claro para depuración
+    backgroundColor: '#222222',
     physics: {
         default: 'arcade',
         arcade: {
             gravity: { y: 0 },
-            debug: true // Activar depuración de física para ver los cuerpos de colisión
+            debug: false // Desactivar debug para producción
         }
     },
     scene: [GameScene]
@@ -45,7 +45,33 @@ const gameConfig = {
 // Inicializar el juego cuando se cargue la página
 window.onload = function() {
     setupEventListeners();
+    
+    // Verificar que todos los componentes necesarios estén disponibles
+    checkGameComponents();
 };
+
+/**
+ * Verifica la disponibilidad de todos los componentes necesarios
+ */
+function checkGameComponents() {
+    console.log("Verificando componentes del juego...");
+    
+    const requiredFunctions = [
+        'generateDungeon', 'createPlayer', 'placeEnemies', 'placeItems', 
+        'placeStairs', 'updateUI', 'addMessage'
+    ];
+    
+    const missingFunctions = requiredFunctions.filter(funcName => 
+        typeof window[funcName] !== 'function'
+    );
+    
+    if (missingFunctions.length > 0) {
+        console.error("Faltan las siguientes funciones:", missingFunctions);
+        alert("Error: Algunos componentes del juego no están disponibles. Recarga la página o contacta al desarrollador.");
+    } else {
+        console.log("Todos los componentes están disponibles.");
+    }
+}
 
 /**
  * Configura los event listeners para la interfaz
@@ -62,86 +88,105 @@ function setupEventListeners() {
     document.getElementById('inventory-items').addEventListener('click', (e) => {
         const itemElement = e.target.closest('.inventory-item');
         if (itemElement && itemElement.dataset.index) {
-            useItem(itemElement.dataset.index);
+            useItem(parseInt(itemElement.dataset.index));
         }
     });
+    
+    console.log("Event listeners configurados.");
 }
 
 /**
  * Inicia el juego
  */
-// Modifica la función startGame para incluir registro de eventos
 function startGame() {
     console.log("Iniciando juego...");
     document.getElementById('main-menu').style.display = 'none';
     
-    // Destruir juego existente si hay uno
-    if (window.gameInstance) {
-        console.log("Destruyendo instancia anterior del juego");
-        window.gameInstance.destroy(true);
-    }
-    
-    // Crear nueva instancia del juego con callbacks para monitorear eventos
-    window.gameInstance = new Phaser.Game({
-        ...gameConfig,
-        callbacks: {
-            preBoot: function (game) {
-                console.log('preBoot: Phaser está iniciando');
-            },
-            postBoot: function (game) {
-                console.log('postBoot: Phaser ha iniciado completamente');
+    try {
+        // Destruir juego existente si hay uno
+        if (window.gameInstance) {
+            console.log("Destruyendo instancia anterior del juego");
+            window.gameInstance.destroy(true);
+        }
+        
+        // Crear nueva instancia del juego
+        window.gameInstance = new Phaser.Game({
+            ...gameConfig,
+            callbacks: {
+                preBoot: function(game) {
+                    console.log('preBoot: Phaser está iniciando');
+                },
+                postBoot: function(game) {
+                    console.log('postBoot: Phaser ha iniciado completamente');
+                }
             }
-        }
-    });
-    
-    // Verificar que la instancia se creó correctamente después de un breve retraso
-    setTimeout(() => {
-        if (window.gameInstance && window.gameInstance.isBooted) {
-            console.log("Juego iniciado correctamente");
-        } else {
-            console.error("Problema al iniciar el juego");
-        }
-    }, 1000);
+        });
+        
+        // Verificar que la instancia se creó correctamente
+        setTimeout(() => {
+            if (window.gameInstance && window.gameInstance.isBooted) {
+                console.log("Juego iniciado correctamente");
+            } else {
+                console.error("Problema al iniciar el juego");
+                alert("Error: No se pudo iniciar el juego. Recarga la página e inténtalo de nuevo.");
+            }
+        }, 1000);
+    } catch (error) {
+        console.error("Error al iniciar el juego:", error);
+        alert("Error al iniciar el juego: " + error.message);
+    }
 }
 
 /**
  * Gestiona el audio del juego de manera simplificada
  */
 function createSimpleAudio() {
-    // En lugar de cargar archivos de audio, creamos efectos de audio simples con el API Web Audio
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return null; // Si no hay soporte, simplemente no tendremos audio
-    
-    const audioContext = new AudioContext();
-    
-    // Función para crear sonidos básicos
-    const createSound = (type, duration, frequency) => {
-        return () => {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.type = type;
-            oscillator.frequency.value = frequency;
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-            
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + duration);
+    try {
+        // En lugar de cargar archivos de audio, creamos efectos de audio simples con el API Web Audio
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) {
+            console.warn("Web Audio API no soportada. No habrá efectos de sonido.");
+            return null;
+        }
+        
+        const audioContext = new AudioContext();
+        
+        // Función para crear sonidos básicos
+        const createSound = (type, duration, frequency) => {
+            return () => {
+                try {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.type = type;
+                    oscillator.frequency.value = frequency;
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                    
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + duration);
+                } catch (error) {
+                    console.warn("Error al reproducir sonido:", error);
+                }
+            };
         };
-    };
-    
-    // Crear efectos de sonido básicos
-    return {
-        hit: createSound('square', 0.1, 200),
-        pickup: createSound('sine', 0.2, 800),
-        levelup: createSound('sawtooth', 0.3, 600),
-        stairs: createSound('triangle', 0.4, 400),
-        enemyDeath: createSound('square', 0.3, 100),
-        playerDeath: createSound('sawtooth', 0.5, 150)
-    };
+        
+        // Crear efectos de sonido básicos
+        return {
+            hit: createSound('square', 0.1, 200),
+            pickup: createSound('sine', 0.2, 800),
+            levelup: createSound('sawtooth', 0.3, 600),
+            stairs: createSound('triangle', 0.4, 400),
+            enemyDeath: createSound('square', 0.3, 100),
+            playerDeath: createSound('sawtooth', 0.5, 150)
+        };
+    } catch (error) {
+        console.warn("Error al inicializar el audio:", error);
+        return null;
+    }
 }
 
 // Crear audio simple
@@ -150,6 +195,10 @@ const simpleAudio = createSimpleAudio();
 // Exponer una función de audio simplificada para que las otras partes del código puedan usarla
 window.playSound = function(sound) {
     if (simpleAudio && simpleAudio[sound]) {
-        simpleAudio[sound]();
+        try {
+            simpleAudio[sound]();
+        } catch (error) {
+            console.warn(`Error al reproducir sonido ${sound}:`, error);
+        }
     }
 };

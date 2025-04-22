@@ -32,15 +32,15 @@ function createPlayer(scene) {
     playerGraphic.lineStyle(2, 0xffff00, 1);
     playerGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.6);
     
-    // Crear sprite del jugador con físicas
-    const player = scene.physics.add.existing(
-        scene.add.sprite(playerX, playerY, '__DEFAULT')
-    );
-    player.setTexture(playerGraphic.generateTexture());
+    // Crear textura para el jugador
+    const playerTexture = playerGraphic.generateTexture('player_texture', CONFIG.tileSize * 2, CONFIG.tileSize * 2);
     playerGraphic.destroy();
     
-    // Hacer el jugador más grande para mayor visibilidad
-    player.setScale(1.5);
+    // Crear sprite del jugador con físicas
+    const player = scene.physics.add.sprite(playerX, playerY, 'player_texture');
+    
+    // Configurar el jugador
+    player.setScale(0.8);
     player.setDepth(20); // Asegurar que esté por encima de todo
     player.setCollideWorldBounds(true);
     
@@ -117,14 +117,8 @@ function handlePlayerMovement(scene, player, cursors, wasd) {
  * Muerte del jugador
  */
 function playerDeath(scene) {
-    // Sonido de muerte
-    if (scene.sound.sounds) {
-        const deathSound = scene.sound.sounds.find(s => s.key === 'player_death');
-        if (deathSound) deathSound.play();
-    }
-    
-    // Efecto de explosión
-    const explosion = scene.add.sprite(scene.player.x, scene.player.y, '__DEFAULT');
+    // Crear efecto de explosión
+    const explosion = scene.add.sprite(scene.player.x, scene.player.y, 'player_texture');
     
     // Crear gráfico de explosión
     const explosionGraphic = scene.add.graphics();
@@ -135,9 +129,11 @@ function playerDeath(scene) {
     explosionGraphic.fillStyle(0xffffff, 0.9);
     explosionGraphic.fillCircle(0, 0, 10);
     
-    explosion.setTexture(explosionGraphic.generateTexture());
+    // Crear textura para la explosión
+    const explosionTexture = explosionGraphic.generateTexture('explosion_texture', 80, 80);
     explosionGraphic.destroy();
     
+    explosion.setTexture('explosion_texture');
     explosion.setScale(0.5);
     explosion.depth = 15;
     
@@ -151,6 +147,9 @@ function playerDeath(scene) {
             explosion.destroy();
         }
     });
+    
+    // Reproducir sonido (si existe)
+    scene.sounds.playerDeath();
     
     // Mensaje
     addMessage("¡Has muerto! Pulsa el botón para intentarlo de nuevo.", "combat");
@@ -177,8 +176,8 @@ function checkLevelUp() {
         // Mensaje
         addMessage(`¡Has subido al nivel ${gameState.playerStats.level}! Tus estadísticas han mejorado.`, "level");
         
-        // Sonido de subida de nivel
-        if (window.gameInstance && window.gameInstance.sound.sounds) {
+        // Reproducir sonido (si existe)
+        if (window.gameInstance && window.gameInstance.sound && window.gameInstance.sound.sounds) {
             const levelupSound = window.gameInstance.sound.sounds.find(s => s.key === 'levelup');
             if (levelupSound) levelupSound.play();
         }
@@ -192,16 +191,16 @@ function checkLevelUp() {
  * Usar las escaleras para bajar al siguiente nivel
  */
 function useStairs(player, stairs) {
-    // Sonido de escaleras
-    if (window.gameInstance && window.gameInstance.sound.sounds) {
-        const stairsSound = window.gameInstance.sound.sounds.find(s => s.key === 'stairs_sound');
-        if (stairsSound) stairsSound.play();
-    }
+    // Obtener referencia a la escena
+    const scene = window.gameInstance.scene.scenes.find(s => s.scene.key === 'GameScene');
+    
+    if (!scene) return;
+    
+    // Reproducir sonido (si existe)
+    scene.sounds.stairs();
     
     // Efecto visual
-    if (window.gameInstance) {
-        window.gameInstance.cameras.main.flash(500, 255, 255, 255);
-    }
+    scene.cameras.main.flash(500, 255, 255, 255);
     
     // Incrementar nivel de mazmorra
     gameState.dungeonLevel++;
@@ -219,9 +218,7 @@ function useStairs(player, stairs) {
     addMessage(`Recuperas ${healthBonus} puntos de salud al descansar entre niveles.`, "level");
     
     // Reiniciar la escena para generar nuevo nivel
-    if (window.gameInstance) {
-        window.gameInstance.scene.getScene('GameScene').scene.restart();
-    }
+    scene.scene.restart();
 }
 
 /**

@@ -8,20 +8,23 @@ class GameScene extends Phaser.Scene {
     
     preload() {
         // No necesitamos cargar recursos externos, usamos gráficos generados dinámicamente
-        // y audio procedural desde main.js
+        console.log("GameScene: preload iniciado");
     }
     
     create() {
-        this.scene.scene = this; // Referencia a la escena para usar en otras funciones
+        console.log("GameScene: create iniciado");
         
-        // Sonidos del juego mediante Web Audio API
+        // Guardar referencia a la escena para usar en otras funciones
+        this.scene.scene = this;
+        
+        // Sonidos del juego mediante callbacks a funciones de Web Audio API
         this.sounds = {
-            hit: () => window.playSound('hit'),
-            pickup: () => window.playSound('pickup'),
-            levelup: () => window.playSound('levelup'),
-            stairs: () => window.playSound('stairs'),
-            enemyDeath: () => window.playSound('enemyDeath'),
-            playerDeath: () => window.playSound('playerDeath')
+            hit: () => window.playSound && window.playSound('hit'),
+            pickup: () => window.playSound && window.playSound('pickup'),
+            levelup: () => window.playSound && window.playSound('levelup'),
+            stairs: () => window.playSound && window.playSound('stairs'),
+            enemyDeath: () => window.playSound && window.playSound('enemyDeath'),
+            playerDeath: () => window.playSound && window.playSound('playerDeath')
         };
         
         // Generar mazmorra
@@ -64,16 +67,26 @@ class GameScene extends Phaser.Scene {
         
         // Configurar colisiones
         this.physics.add.collider(this.player, gameState.wallsLayer);
-        this.physics.add.overlap(this.player, gameState.itemsGroup, (player, itemSprite) => {
-            collectItem(this, player, itemSprite);
-        }, null, this);
-        this.physics.add.overlap(this.player, gameState.stairs, (player, stairs) => {
-            useStairs(player, stairs);
-        }, null, this);
+        
+        // Overlap con ítems
+        if (gameState.itemsGroup) {
+            this.physics.add.overlap(this.player, gameState.itemsGroup, (player, itemSprite) => {
+                collectItem(this, player, itemSprite);
+            }, null, this);
+        }
+        
+        // Overlap con escaleras
+        if (gameState.stairs) {
+            this.physics.add.overlap(this.player, gameState.stairs, (player, stairs) => {
+                useStairs(player, stairs);
+            }, null, this);
+        }
         
         // Inicializar UI
         updateUI();
         addMessage(`Bienvenido al nivel ${gameState.dungeonLevel} de la mazmorra.`, "level");
+        
+        console.log("GameScene: create completado");
     }
     
     update() {
@@ -92,10 +105,6 @@ class GameScene extends Phaser.Scene {
 }
 
 /**
- * Funciones de la escena principal
- */
-
-/**
  * Maneja ataques de enemigos al jugador
  */
 function enemyAttack(scene, enemy, player) {
@@ -104,21 +113,24 @@ function enemyAttack(scene, enemy, player) {
     const defense = gameState.playerStats.defense;
     const damage = Math.max(1, baseDamage - defense);
     
-    // Crear animación de ataque (explosión simple)
-    const attackFx = scene.add.sprite(player.x, player.y, '__DEFAULT');
+    // Crear gráfico para la animación de ataque
+    const attackGraphic = scene.add.graphics();
+    attackGraphic.fillStyle(0xff0000, 0.8);
+    attackGraphic.fillCircle(0, 0, 20);
+    attackGraphic.fillStyle(0xffff00, 0.8);
+    attackGraphic.fillCircle(0, 0, 12);
+    attackGraphic.fillStyle(0xffffff, 0.9);
+    attackGraphic.fillCircle(0, 0, 5);
     
-    // Crear gráfico de explosión
-    const explosionGraphic = scene.add.graphics();
-    explosionGraphic.fillStyle(0xff0000, 0.8);
-    explosionGraphic.fillCircle(0, 0, 20);
-    explosionGraphic.fillStyle(0xffff00, 0.8);
-    explosionGraphic.fillCircle(0, 0, 12);
-    explosionGraphic.fillStyle(0xffffff, 0.9);
-    explosionGraphic.fillCircle(0, 0, 5);
+    // Generar textura para el ataque
+    const attackTextureKey = 'enemy_attack_texture';
+    if (!scene.textures.exists(attackTextureKey)) {
+        attackGraphic.generateTexture(attackTextureKey, 40, 40);
+    }
+    attackGraphic.destroy();
     
-    attackFx.setTexture(explosionGraphic.generateTexture());
-    explosionGraphic.destroy();
-    
+    // Crear el sprite del ataque
+    const attackFx = scene.add.sprite(player.x, player.y, attackTextureKey);
     attackFx.setScale(0.5);
     attackFx.depth = 15;
     
@@ -133,7 +145,7 @@ function enemyAttack(scene, enemy, player) {
         }
     });
     
-    // Sonido de golpe
+    // Reproducir sonido
     scene.sounds.hit();
     
     // Aplicar daño
@@ -163,21 +175,24 @@ function attackEnemy(scene, enemy) {
     const defense = enemy.defense;
     const damage = Math.max(1, baseDamage - defense);
     
-    // Crear animación de ataque (explosión simple)
-    const attackFx = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, '__DEFAULT');
+    // Crear gráfico para la animación de ataque
+    const attackGraphic = scene.add.graphics();
+    attackGraphic.fillStyle(0x3498db, 0.8);
+    attackGraphic.fillCircle(0, 0, 20);
+    attackGraphic.fillStyle(0x2980b9, 0.8);
+    attackGraphic.fillCircle(0, 0, 12);
+    attackGraphic.fillStyle(0xffffff, 0.9);
+    attackGraphic.fillCircle(0, 0, 5);
     
-    // Crear gráfico de explosión
-    const explosionGraphic = scene.add.graphics();
-    explosionGraphic.fillStyle(0x3498db, 0.8);
-    explosionGraphic.fillCircle(0, 0, 20);
-    explosionGraphic.fillStyle(0x2980b9, 0.8);
-    explosionGraphic.fillCircle(0, 0, 12);
-    explosionGraphic.fillStyle(0xffffff, 0.9);
-    explosionGraphic.fillCircle(0, 0, 5);
+    // Generar textura para el ataque
+    const attackTextureKey = 'player_attack_texture';
+    if (!scene.textures.exists(attackTextureKey)) {
+        attackGraphic.generateTexture(attackTextureKey, 40, 40);
+    }
+    attackGraphic.destroy();
     
-    attackFx.setTexture(explosionGraphic.generateTexture());
-    explosionGraphic.destroy();
-    
+    // Crear el sprite del ataque
+    const attackFx = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, attackTextureKey);
     attackFx.setScale(0.5);
     attackFx.depth = 15;
     
@@ -192,7 +207,7 @@ function attackEnemy(scene, enemy) {
         }
     });
     
-    // Sonido de golpe
+    // Reproducir sonido
     scene.sounds.hit();
     
     // Aplicar daño
@@ -221,13 +236,10 @@ function attackEnemy(scene, enemy) {
  * Maneja la derrota de un enemigo
  */
 function defeatEnemy(scene, enemy) {
-    // Sonido de muerte
+    // Reproducir sonido
     scene.sounds.enemyDeath();
     
-    // Efecto de explosión
-    const explosion = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, '__DEFAULT');
-    
-    // Crear gráfico de explosión
+    // Crear gráfico para la explosión
     const explosionGraphic = scene.add.graphics();
     explosionGraphic.fillStyle(0xff0000, 0.7);
     explosionGraphic.fillCircle(0, 0, 30);
@@ -236,9 +248,15 @@ function defeatEnemy(scene, enemy) {
     explosionGraphic.fillStyle(0xffffff, 0.9);
     explosionGraphic.fillCircle(0, 0, 10);
     
-    explosion.setTexture(explosionGraphic.generateTexture());
+    // Generar textura para la explosión
+    const explosionTextureKey = 'enemy_death_texture';
+    if (!scene.textures.exists(explosionTextureKey)) {
+        explosionGraphic.generateTexture(explosionTextureKey, 60, 60);
+    }
     explosionGraphic.destroy();
     
+    // Crear el sprite de la explosión
+    const explosion = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, explosionTextureKey);
     explosion.setScale(0.5);
     explosion.depth = 15;
     
@@ -284,13 +302,7 @@ function defeatEnemy(scene, enemy) {
  * Maneja la muerte del jugador
  */
 function playerDeath(scene) {
-    // Sonido de muerte
-    scene.sounds.playerDeath();
-    
-    // Efecto de explosión
-    const explosion = scene.add.sprite(scene.player.x, scene.player.y, '__DEFAULT');
-    
-    // Crear gráfico de explosión
+    // Crear gráfico para la explosión
     const explosionGraphic = scene.add.graphics();
     explosionGraphic.fillStyle(0x3498db, 0.7);
     explosionGraphic.fillCircle(0, 0, 40);
@@ -299,9 +311,15 @@ function playerDeath(scene) {
     explosionGraphic.fillStyle(0xffffff, 0.9);
     explosionGraphic.fillCircle(0, 0, 10);
     
-    explosion.setTexture(explosionGraphic.generateTexture());
+    // Generar textura para la explosión
+    const explosionTextureKey = 'player_death_texture';
+    if (!scene.textures.exists(explosionTextureKey)) {
+        explosionGraphic.generateTexture(explosionTextureKey, 80, 80);
+    }
     explosionGraphic.destroy();
     
+    // Crear el sprite de la explosión
+    const explosion = scene.add.sprite(scene.player.x, scene.player.y, explosionTextureKey);
     explosion.setScale(0.5);
     explosion.depth = 15;
     
@@ -316,72 +334,12 @@ function playerDeath(scene) {
         }
     });
     
+    // Reproducir sonido
+    scene.sounds.playerDeath();
+    
     // Mensaje
     addMessage("¡Has muerto! Pulsa el botón para intentarlo de nuevo.", "combat");
     
     // Game Over
     showGameOver();
-}
-
-/**
- * Conecta la funcionalidad para bajar escaleras
- */
-function useStairs(player, stairs) {
-    // Obtener referencia a la escena
-    const scene = window.gameInstance.scene.scenes[0];
-    
-    // Sonido de escaleras
-    scene.sounds.stairs();
-    
-    // Efecto visual
-    scene.cameras.main.flash(500, 255, 255, 255);
-    
-    // Incrementar nivel de mazmorra
-    gameState.dungeonLevel++;
-    
-    // Mensaje
-    addMessage(`Desciendes al nivel ${gameState.dungeonLevel} de la mazmorra.`, "level");
-    
-    // Recuperar algo de salud
-    const healthBonus = getRandomInt(10, 20);
-    gameState.playerStats.health = Math.min(
-        gameState.playerStats.maxHealth,
-        gameState.playerStats.health + healthBonus
-    );
-    
-    addMessage(`Recuperas ${healthBonus} puntos de salud al descansar entre niveles.`, "level");
-    
-    // Reiniciar la escena para generar nuevo nivel
-    scene.scene.restart();
-}
-
-/**
- * Conecta la funcionalidad para recoger objetos
- */
-function collectItem(scene, player, itemSprite) {
-    const itemIndex = gameState.items.findIndex(item => item.sprite === itemSprite);
-    
-    if (itemIndex !== -1) {
-        const item = gameState.items[itemIndex];
-        
-        // Reproducir sonido de recogida
-        scene.sounds.pickup();
-        
-        // Añadir al inventario
-        gameState.inventory.push({
-            type: item.type,
-            level: item.level,
-            name: item.name
-        });
-        
-        // Mensaje
-        addMessage(`Has recogido: ${item.name}.`, "item");
-        
-        // Eliminar objeto del mundo
-        item.sprite.destroy();
-        gameState.items.splice(itemIndex, 1);
-        
-        // Actualizar inventario
-        updateInventoryUI();
-    }
 }

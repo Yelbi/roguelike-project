@@ -36,18 +36,57 @@ function placeEnemies(scene) {
             const enemyX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
             const enemyY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
             
-            // Usando Graphics para crear sprites personalizados en lugar de depender de assets externos
+            // Usar gráficos para crear una textura para el enemigo
             const enemyGraphic = scene.add.graphics();
-            SPRITES.enemy.render(enemyGraphic, 0, 0, CONFIG.tileSize * 0.8, enemyType);
             
-            // Convertir a sprite con físicas
-            const enemy = scene.physics.add.existing(
-                scene.add.sprite(enemyX, enemyY, '__DEFAULT')
-            );
+            // Colores según tipo de enemigo
+            const colors = [0xe74c3c, 0xc0392b, 0xd35400, 0xe67e22, 0xf39c12, 0x8e44ad];
+            const color = colors[enemyType % colors.length];
+            
+            enemyGraphic.fillStyle(color, 1);
+            
+            // Forma según tipo
+            if (enemyType % 3 === 0) {
+                // Triángulo
+                enemyGraphic.beginPath();
+                enemyGraphic.moveTo(0, -CONFIG.tileSize/2);
+                enemyGraphic.lineTo(-CONFIG.tileSize/2, CONFIG.tileSize/2);
+                enemyGraphic.lineTo(CONFIG.tileSize/2, CONFIG.tileSize/2);
+                enemyGraphic.closePath();
+                enemyGraphic.fillPath();
+            } else if (enemyType % 3 === 1) {
+                // Cuadrado
+                enemyGraphic.fillRect(-CONFIG.tileSize/2, -CONFIG.tileSize/2, CONFIG.tileSize, CONFIG.tileSize);
+            } else {
+                // Hexágono
+                enemyGraphic.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI / 3) * i;
+                    const px = Math.sin(angle) * (CONFIG.tileSize/2);
+                    const py = Math.cos(angle) * (CONFIG.tileSize/2);
+                    if (i === 0) {
+                        enemyGraphic.moveTo(px, py);
+                    } else {
+                        enemyGraphic.lineTo(px, py);
+                    }
+                }
+                enemyGraphic.closePath();
+                enemyGraphic.fillPath();
+            }
+            
+            // Crear una textura para el enemigo
+            const enemyTextureKey = `enemy_${enemyType}_texture`;
+            
+            if (!scene.textures.exists(enemyTextureKey)) {
+                enemyGraphic.generateTexture(enemyTextureKey, CONFIG.tileSize * 2, CONFIG.tileSize * 2);
+            }
+            
+            enemyGraphic.destroy();
+            
+            // Crear sprite con físicas
+            const enemy = scene.physics.add.sprite(enemyX, enemyY, enemyTextureKey);
             enemy.setScale(0.8);
             enemy.depth = 5;
-            enemy.setTexture(enemyGraphic.generateTexture());
-            enemyGraphic.destroy();
             
             // Agregar al grupo de físicas
             gameState.enemiesGroup.add(enemy);
@@ -80,7 +119,9 @@ function placeEnemies(scene) {
     
     // Configurar colisiones
     scene.physics.add.collider(gameState.enemiesGroup, gameState.wallsLayer);
-    scene.physics.add.collider(gameState.enemiesGroup, gameState.decorationLayer);
+    if (gameState.decorationLayer) {
+        scene.physics.add.collider(gameState.enemiesGroup, gameState.decorationLayer);
+    }
     scene.physics.add.collider(gameState.enemiesGroup, gameState.enemiesGroup);
 }
 
@@ -195,20 +236,23 @@ function enemyAttack(scene, enemy, player) {
     const damage = Math.max(1, baseDamage - defense);
     
     // Crear animación de ataque (explosión simple)
-    const attackFx = scene.add.sprite(player.x, player.y, '__DEFAULT');
+    const attackGraphic = scene.add.graphics();
+    attackGraphic.fillStyle(0xff0000, 0.8);
+    attackGraphic.fillCircle(0, 0, 20);
+    attackGraphic.fillStyle(0xffff00, 0.8);
+    attackGraphic.fillCircle(0, 0, 12);
+    attackGraphic.fillStyle(0xffffff, 0.9);
+    attackGraphic.fillCircle(0, 0, 5);
     
-    // Crear gráfico de explosión
-    const explosionGraphic = scene.add.graphics();
-    explosionGraphic.fillStyle(0xff0000, 0.8);
-    explosionGraphic.fillCircle(0, 0, 20);
-    explosionGraphic.fillStyle(0xffff00, 0.8);
-    explosionGraphic.fillCircle(0, 0, 12);
-    explosionGraphic.fillStyle(0xffffff, 0.9);
-    explosionGraphic.fillCircle(0, 0, 5);
+    // Generar textura para la animación
+    const attackTextureKey = 'enemy_attack_texture';
+    if (!scene.textures.exists(attackTextureKey)) {
+        attackGraphic.generateTexture(attackTextureKey, 40, 40);
+    }
+    attackGraphic.destroy();
     
-    attackFx.setTexture(explosionGraphic.generateTexture());
-    explosionGraphic.destroy();
-    
+    // Crear el sprite de la explosión
+    const attackFx = scene.add.sprite(player.x, player.y, attackTextureKey);
     attackFx.setScale(0.5);
     attackFx.depth = 15;
     
@@ -223,11 +267,8 @@ function enemyAttack(scene, enemy, player) {
         }
     });
     
-    // Sonido de golpe
-    if (scene.sound.sounds) {
-        const hitSound = scene.sound.sounds.find(s => s.key === 'hit');
-        if (hitSound) hitSound.play();
-    }
+    // Reproducir sonido
+    scene.sounds.hit();
     
     // Aplicar daño
     gameState.playerStats.health -= damage;
@@ -257,20 +298,23 @@ function attackEnemy(scene, enemy) {
     const damage = Math.max(1, baseDamage - defense);
     
     // Crear animación de ataque (explosión simple)
-    const attackFx = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, '__DEFAULT');
+    const attackGraphic = scene.add.graphics();
+    attackGraphic.fillStyle(0x3498db, 0.8);
+    attackGraphic.fillCircle(0, 0, 20);
+    attackGraphic.fillStyle(0x2980b9, 0.8);
+    attackGraphic.fillCircle(0, 0, 12);
+    attackGraphic.fillStyle(0xffffff, 0.9);
+    attackGraphic.fillCircle(0, 0, 5);
     
-    // Crear gráfico de explosión
-    const explosionGraphic = scene.add.graphics();
-    explosionGraphic.fillStyle(0x3498db, 0.8);
-    explosionGraphic.fillCircle(0, 0, 20);
-    explosionGraphic.fillStyle(0x2980b9, 0.8);
-    explosionGraphic.fillCircle(0, 0, 12);
-    explosionGraphic.fillStyle(0xffffff, 0.9);
-    explosionGraphic.fillCircle(0, 0, 5);
+    // Generar textura para la animación
+    const attackTextureKey = 'player_attack_texture';
+    if (!scene.textures.exists(attackTextureKey)) {
+        attackGraphic.generateTexture(attackTextureKey, 40, 40);
+    }
+    attackGraphic.destroy();
     
-    attackFx.setTexture(explosionGraphic.generateTexture());
-    explosionGraphic.destroy();
-    
+    // Crear el sprite de la explosión
+    const attackFx = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, attackTextureKey);
     attackFx.setScale(0.5);
     attackFx.depth = 15;
     
@@ -285,11 +329,8 @@ function attackEnemy(scene, enemy) {
         }
     });
     
-    // Sonido de golpe
-    if (scene.sound.sounds) {
-        const hitSound = scene.sound.sounds.find(s => s.key === 'hit');
-        if (hitSound) hitSound.play();
-    }
+    // Reproducir sonido
+    scene.sounds.hit();
     
     // Aplicar daño
     enemy.health -= damage;
@@ -317,16 +358,10 @@ function attackEnemy(scene, enemy) {
  * Derrota a un enemigo
  */
 function defeatEnemy(scene, enemy) {
-    // Sonido de muerte
-    if (scene.sound.sounds) {
-        const deathSound = scene.sound.sounds.find(s => s.key === 'enemy_death');
-        if (deathSound) deathSound.play();
-    }
+    // Reproducir sonido
+    scene.sounds.enemyDeath();
     
     // Efecto de explosión
-    const explosion = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, '__DEFAULT');
-    
-    // Crear gráfico de explosión
     const explosionGraphic = scene.add.graphics();
     explosionGraphic.fillStyle(0xff0000, 0.7);
     explosionGraphic.fillCircle(0, 0, 30);
@@ -335,9 +370,15 @@ function defeatEnemy(scene, enemy) {
     explosionGraphic.fillStyle(0xffffff, 0.9);
     explosionGraphic.fillCircle(0, 0, 10);
     
-    explosion.setTexture(explosionGraphic.generateTexture());
+    // Generar textura para la explosión
+    const explosionTextureKey = 'enemy_death_texture';
+    if (!scene.textures.exists(explosionTextureKey)) {
+        explosionGraphic.generateTexture(explosionTextureKey, 60, 60);
+    }
     explosionGraphic.destroy();
     
+    // Crear el sprite de la explosión
+    const explosion = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, explosionTextureKey);
     explosion.setScale(0.5);
     explosion.depth = 15;
     
