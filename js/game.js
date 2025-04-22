@@ -19,12 +19,12 @@ class GameScene extends Phaser.Scene {
         
         // Sonidos del juego mediante callbacks a funciones de Web Audio API
         this.sounds = {
-            hit: () => window.playSound && window.playSound('hit'),
-            pickup: () => window.playSound && window.playSound('pickup'),
-            levelup: () => window.playSound && window.playSound('levelup'),
-            stairs: () => window.playSound && window.playSound('stairs'),
-            enemyDeath: () => window.playSound && window.playSound('enemyDeath'),
-            playerDeath: () => window.playSound && window.playSound('playerDeath')
+            hit: function() { AudioManager.playSound('hit'); },
+            pickup: function() { AudioManager.playSound('pickup'); },
+            levelup: function() { AudioManager.playSound('levelup'); },
+            stairs: function() { AudioManager.playSound('stairs'); },
+            enemyDeath: function() { AudioManager.playSound('enemyDeath'); },
+            playerDeath: function() { AudioManager.playSound('playerDeath'); }
         };
         
         // Generar mazmorra
@@ -104,137 +104,445 @@ class GameScene extends Phaser.Scene {
     }
 }
 
+EnemyModule.attackEnemy(scene, enemy);
+EnemyModule.enemyAttack(scene, enemy, player);
+EnemyModule.defeatEnemy(scene, enemy);
+
 /**
- * Maneja ataques de enemigos al jugador
+ * Recoge un objeto
  */
-function enemyAttack(scene, enemy, player) {
-    // Calcular daño
-    const baseDamage = enemy.attack;
-    const defense = gameState.playerStats.defense;
-    const damage = Math.max(1, baseDamage - defense);
+function collectItem(scene, player, itemSprite) {
+    // Buscar el objeto en el array
+    const itemIndex = gameState.items.findIndex(item => item.sprite === itemSprite);
     
-    // Crear gráfico para la animación de ataque
-    const attackGraphic = scene.add.graphics();
-    attackGraphic.fillStyle(0xff0000, 0.8);
-    attackGraphic.fillCircle(0, 0, 20);
-    attackGraphic.fillStyle(0xffff00, 0.8);
-    attackGraphic.fillCircle(0, 0, 12);
-    attackGraphic.fillStyle(0xffffff, 0.9);
-    attackGraphic.fillCircle(0, 0, 5);
-    
-    // Generar textura para el ataque
-    const attackTextureKey = 'enemy_attack_texture';
-    if (!scene.textures.exists(attackTextureKey)) {
-        attackGraphic.generateTexture(attackTextureKey, 40, 40);
-    }
-    attackGraphic.destroy();
-    
-    // Crear el sprite del ataque
-    const attackFx = scene.add.sprite(player.x, player.y, attackTextureKey);
-    attackFx.setScale(0.5);
-    attackFx.depth = 15;
-    
-    // Animación de la explosión
-    scene.tweens.add({
-        targets: attackFx,
-        scale: 1.2,
-        alpha: 0,
-        duration: 300,
-        onComplete: () => {
-            attackFx.destroy();
+    if (itemIndex !== -1) {
+        const item = gameState.items[itemIndex];
+        
+        // Reproducir sonido
+        scene.sounds.pickup();
+        
+        // Añadir al inventario
+        gameState.inventory.push({
+            type: item.type,
+            level: item.level,
+            name: item.name
+        });
+        
+        // Mensaje
+        addMessage(`Has recogido: ${item.name}`, "item");
+        
+        // Efecto visual
+        const pickupEffect = scene.add.sprite(itemSprite.x, itemSprite.y, 'player_texture');
+        pickupEffect.setScale(0.5);
+        pickupEffect.setAlpha(0.7);
+        pickupEffect.setTint(0xffffff);
+        
+        scene.tweens.add({
+            targets: pickupEffect,
+            scale: 2,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+                pickupEffect.destroy();
+            }
+        });
+        
+        // Limpiar recursos
+        if (item.particles) {
+            item.particles.destroy();
         }
-    });
-    
-    // Reproducir sonido
-    scene.sounds.hit();
-    
-    // Aplicar daño
-    gameState.playerStats.health -= damage;
-    
-    // Sacudir la cámara
-    scene.cameras.main.shake(100, 0.01);
-    
-    // Mensaje
-    addMessage(`El enemigo te ataca y causa ${damage} puntos de daño.`, "combat");
-    
-    // Actualizar UI
-    updateUI();
-    
-    // Comprobar si el jugador ha muerto
-    if (gameState.playerStats.health <= 0) {
-        playerDeath(scene);
+        
+        // Eliminar objeto
+        itemSprite.destroy();
+        gameState.items.splice(itemIndex, 1);
+        
+        // Actualizar inventario
+        updateInventoryUI();
     }
 }
 
 /**
- * Maneja ataques del jugador a enemigos
+ * Usa un objeto del inventario
  */
-EnemyModule.attackEnemy(scene, enemy);
+function useItem(index) {
+    if (index >= 0 && index < gameState.inventory.length) {
+        const item = gameState.inventory[index];
+        const scene = getActiveScene();
+        
+        if (!scene || !scene.player) {
+            console.error("No se puede usar objeto: escena o jugador no disponible");
+            return;
+        }
+        
+        // Aplicar efecto según tipo
+        switch (item.type) {
+            case 0: // Poción de Salud
+                const healAmount = 20 + (item.level * 10);
+                gameState.playerStats.health = Math.min(
+                    gameState.playerStats.health + healAmount,
+                    gameState.playerStats.maxHealth
+                );
+                createItemUseEffect(scene, scene.player, 0x9bdc28, `+${healAmount} Salud`, item.level);
+                addMessage(`Has usado ${item.name} y recuperas ${healAmount} puntos de salud.`, "item");
+                break;
+                
+            case 1: // Poción de Fuerza
+                const attackBonus = 2 + item.level;
+                gameState.playerStats.attack += attackBonus;
+                createItemUseEffect(scene, scene.player, 0xe94560, `+${attackBonus} Fuerza`, item.level);
+                addMessage(`Has usado ${item.name} y tu ataque aumenta en ${attackBonus}.`, "item");
+                break;
+                
+            case 2: // Poción de Defensa
+                const defenseBonus = 1 + Math.floor(item.level / 2);
+                gameState.playerStats.defense += defenseBonus;
+                createItemUseEffect(scene, scene.player, 0x4285f4, `+${defenseBonus} Defensa`, item.level);
+                addMessage(`Has usado ${item.name} y tu defensa aumenta en ${defenseBonus}.`, "item");
+                break;
+                
+            case 3: // Poción de Experiencia
+                const xpGain = 25 + (item.level * 25);
+                gameState.playerStats.xp += xpGain;
+                createItemUseEffect(scene, scene.player, 0x9c42f4, `+${xpGain} XP`, item.level);
+                addMessage(`Has usado ${item.name} y ganas ${xpGain} puntos de experiencia.`, "item");
+                checkLevelUp();
+                break;
+                
+            case 4: // Poción de Vida Máxima
+                const maxHealthBonus = 5 + (item.level * 5);
+                gameState.playerStats.maxHealth += maxHealthBonus;
+                gameState.playerStats.health += maxHealthBonus;
+                createItemUseEffect(scene, scene.player, 0x42cef4, `+${maxHealthBonus} Vida Máx.`, item.level);
+                addMessage(`Has usado ${item.name} y tu salud máxima aumenta en ${maxHealthBonus}.`, "item");
+                break;
+                
+            case 5: // Poción Misteriosa
+                // Efecto aleatorio
+                const effects = [
+                    // Efectos positivos
+                    () => {
+                        const healAmount = 30 + (item.level * 15);
+                        gameState.playerStats.health = Math.min(
+                            gameState.playerStats.health + healAmount,
+                            gameState.playerStats.maxHealth
+                        );
+                        createItemUseEffect(scene, scene.player, 0x9bdc28, `+${healAmount} Salud`, item.level);
+                        addMessage(`La poción misteriosa te cura ${healAmount} puntos de salud.`, "item");
+                    },
+                    () => {
+                        const attackBonus = 3 + Math.floor(item.level * 1.5);
+                        gameState.playerStats.attack += attackBonus;
+                        createItemUseEffect(scene, scene.player, 0xe94560, `+${attackBonus} Fuerza`, item.level);
+                        addMessage(`La poción misteriosa aumenta tu ataque en ${attackBonus}.`, "item");
+                    },
+                    // Efectos neutrales
+                    () => {
+                        // Teletransporte a una sala aleatoria
+                        if (gameState.rooms.length > 0) {
+                            const randomRoom = gameState.rooms[getRandomInt(0, gameState.rooms.length - 1)];
+                            scene.player.x = randomRoom.centerX * CONFIG.tileSize + (CONFIG.tileSize / 2);
+                            scene.player.y = randomRoom.centerY * CONFIG.tileSize + (CONFIG.tileSize / 2);
+                            createItemUseEffect(scene, scene.player, 0xf4a742, `¡Teletransporte!`, item.level);
+                            scene.cameras.main.flash(500, 234, 255, 255);
+                            addMessage(`La poción misteriosa te teletransporta a otra sala.`, "item");
+                        }
+                    },
+                    // Efectos negativos (solo con probabilidad baja)
+                    () => {
+                        if (Math.random() < 0.3) {
+                            const damage = Math.max(1, Math.floor(gameState.playerStats.health * 0.1));
+                            gameState.playerStats.health -= damage;
+                            createItemUseEffect(scene, scene.player, 0xff0000, `-${damage} Salud`, item.level);
+                            addMessage(`¡La poción misteriosa te envenena y pierdes ${damage} puntos de salud!`, "item");
+                            // Comprobar muerte
+                            if (gameState.playerStats.health <= 0) {
+                                playerDeath(scene);
+                            }
+                        } else {
+                            // Efecto positivo aleatorio como fallback
+                            const healAmount = 20 + (item.level * 10);
+                            gameState.playerStats.health = Math.min(
+                                gameState.playerStats.health + healAmount,
+                                gameState.playerStats.maxHealth
+                            );
+                            createItemUseEffect(scene, scene.player, 0x9bdc28, `+${healAmount} Salud`, item.level);
+                            addMessage(`La poción misteriosa te cura ${healAmount} puntos de salud.`, "item");
+                        }
+                    }
+                ];
+                
+                // Elegir un efecto aleatorio
+                effects[getRandomInt(0, effects.length - 1)]();
+                break;
+        }
+        
+        // Reproducir sonido
+        scene.sounds.pickup();
+        
+        // Actualizar UI
+        updateUI();
+        
+        // Eliminar del inventario
+        gameState.inventory.splice(index, 1);
+        updateInventoryUI();
+    }
+}
 
 /**
- * Maneja la derrota de un enemigo
+ * Comprueba si el jugador sube de nivel
  */
-function defeatEnemy(scene, enemy) {
-    // Reproducir sonido
-    scene.sounds.enemyDeath();
-    
-    // Crear gráfico para la explosión
-    const explosionGraphic = scene.add.graphics();
-    explosionGraphic.fillStyle(0xff0000, 0.7);
-    explosionGraphic.fillCircle(0, 0, 30);
-    explosionGraphic.fillStyle(0xffff00, 0.8);
-    explosionGraphic.fillCircle(0, 0, 20);
-    explosionGraphic.fillStyle(0xffffff, 0.9);
-    explosionGraphic.fillCircle(0, 0, 10);
-    
-    // Generar textura para la explosión
-    const explosionTextureKey = 'enemy_death_texture';
-    if (!scene.textures.exists(explosionTextureKey)) {
-        explosionGraphic.generateTexture(explosionTextureKey, 60, 60);
+function checkLevelUp() {
+    if (gameState.playerStats.xp >= gameState.playerStats.nextLevelXp) {
+        const scene = getActiveScene();
+        
+        // Subir de nivel
+        gameState.playerStats.level++;
+        gameState.playerStats.xp -= gameState.playerStats.nextLevelXp;
+        
+        // Calcular XP para el siguiente nivel
+        gameState.playerStats.nextLevelXp = calculateXpForNextLevel(gameState.playerStats.level);
+        
+        // Mejorar estadísticas
+        const healthBonus = 10 + getRandomInt(5, 15);
+        const attackBonus = 2 + getRandomInt(1, 3);
+        const defenseBonus = 1 + getRandomInt(0, 2);
+        
+        gameState.playerStats.maxHealth += healthBonus;
+        gameState.playerStats.health = gameState.playerStats.maxHealth; // Curación completa
+        gameState.playerStats.attack += attackBonus;
+        gameState.playerStats.defense += defenseBonus;
+        
+        // Mensaje
+        addMessage(`¡Has subido al nivel ${gameState.playerStats.level}! Salud +${healthBonus}, Ataque +${attackBonus}, Defensa +${defenseBonus}.`, "level");
+        
+        // Efectos visuales
+        if (scene && scene.player) {
+            // Reproducir sonido
+            scene.sounds.levelup();
+            
+            // Efecto visual de subida de nivel
+            const levelUpEffect = scene.add.graphics();
+            levelUpEffect.fillStyle(0xffd369, 0.6);
+            levelUpEffect.fillCircle(0, 0, CONFIG.tileSize * 2);
+            
+            const effectTexture = levelUpEffect.generateTexture('levelup_effect', CONFIG.tileSize * 4, CONFIG.tileSize * 4);
+            levelUpEffect.destroy();
+            
+            const effect = scene.add.sprite(scene.player.x, scene.player.y, 'levelup_effect');
+            effect.setDepth(30);
+            
+            scene.tweens.add({
+                targets: effect,
+                scale: 2,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => {
+                    effect.destroy();
+                }
+            });
+            
+            // Sacudir ligeramente la cámara
+            scene.cameras.main.shake(300, 0.01);
+            
+            // Texto de "LEVEL UP!"
+            const levelText = scene.add.text(
+                scene.player.x, 
+                scene.player.y - 50, 
+                '¡NIVEL UP!', 
+                { 
+                    fontFamily: 'Arial', 
+                    fontSize: 24, 
+                    color: '#ffd369',
+                    stroke: '#000000',
+                    strokeThickness: 4,
+                    align: 'center'
+                }
+            );
+            levelText.setOrigin(0.5);
+            levelText.setDepth(31);
+            
+            scene.tweens.add({
+                targets: levelText,
+                y: levelText.y - 30,
+                scale: 1.5,
+                alpha: 0,
+                duration: 1500,
+                onComplete: () => {
+                    levelText.destroy();
+                }
+            });
+        }
+        
+        // Actualizar UI
+        updateUI();
+        
+        // Comprobar si hay que volver a subir de nivel
+        if (gameState.playerStats.xp >= gameState.playerStats.nextLevelXp) {
+            checkLevelUp();
+        }
     }
-    explosionGraphic.destroy();
+}
+
+/**
+ * Procesa los efectos de estado activos en el jugador
+ */
+function processStatusEffects(scene) {
+    const currentTime = scene.time.now;
     
-    // Crear el sprite de la explosión
-    const explosion = scene.add.sprite(enemy.sprite.x, enemy.sprite.y, explosionTextureKey);
-    explosion.setScale(0.5);
-    explosion.depth = 15;
+    // Filtrar efectos caducados
+    gameState.playerStats.statusEffects = gameState.playerStats.statusEffects.filter(effect => {
+        // Comprobar si el efecto ha expirado
+        if (effect.expiresAt && effect.expiresAt < currentTime) {
+            // Aplicar efecto de finalización si existe
+            if (effect.onEnd) {
+                effect.onEnd();
+            }
+            
+            // Mensaje
+            addMessage(`El efecto ${effect.name} ha terminado.`);
+            
+            // Actualizar UI
+            updateUI();
+            
+            // Eliminar efecto
+            return false;
+        }
+        
+        // Aplicar efecto por turno si es tiempo
+        if (effect.onTick && (!effect.lastTick || currentTime - effect.lastTick > effect.tickInterval)) {
+            effect.onTick();
+            effect.lastTick = currentTime;
+            
+            // Actualizar UI si el efecto cambia estadísticas
+            if (effect.affectsStats) {
+                updateUI();
+            }
+        }
+        
+        // Mantener efecto
+        return true;
+    });
+}
+
+/**
+ * Coloca las escaleras para bajar al siguiente nivel
+ */
+function placeStairs(scene) {
+    // Eliminar escaleras anteriores si existen
+    if (gameState.stairs) {
+        gameState.stairs.destroy();
+    }
     
-    // Animación de la explosión
+    // Colocar escaleras en la última sala
+    if (gameState.rooms.length > 0) {
+        const lastRoom = gameState.rooms[gameState.rooms.length - 1];
+        const stairsX = lastRoom.centerX * CONFIG.tileSize + (CONFIG.tileSize / 2);
+        const stairsY = lastRoom.centerY * CONFIG.tileSize + (CONFIG.tileSize / 2);
+        
+        // Crear gráfico para las escaleras (portal)
+        const stairsGraphic = scene.add.graphics();
+        
+        // Círculo exterior
+        stairsGraphic.lineStyle(3, 0xffd369, 0.8);
+        stairsGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.8);
+        
+        // Círculo interior
+        stairsGraphic.lineStyle(2, 0xe94560, 0.6);
+        stairsGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.5);
+        
+        // Generar textura
+        const stairsTextureKey = 'stairs_texture';
+        stairsGraphic.generateTexture(stairsTextureKey, CONFIG.tileSize * 2, CONFIG.tileSize * 2);
+        stairsGraphic.destroy();
+        
+        // Crear sprite con físicas
+        gameState.stairs = scene.physics.add.sprite(stairsX, stairsY, stairsTextureKey);
+        gameState.stairs.setScale(0.8);
+        gameState.stairs.setDepth(3);
+        
+        // Añadir animación de brillo
+        scene.tweens.add({
+            targets: gameState.stairs,
+            alpha: 0.7,
+            scale: 0.9,
+            duration: 1500,
+            yoyo: true,
+            repeat: -1
+        });
+        
+        // Añadir partículas alrededor
+        const particles = scene.add.particles(stairsTextureKey);
+        const emitter = particles.createEmitter({
+            scale: { start: 0.1, end: 0 },
+            speed: 20,
+            blendMode: 'ADD',
+            lifespan: 1000,
+            frequency: 200
+        });
+        
+        emitter.startFollow(gameState.stairs);
+        
+        // Guardar referencia para limpiar después
+        gameState.stairsParticles = particles;
+    }
+}
+
+/**
+ * Usa las escaleras para avanzar al siguiente nivel
+ */
+function useStairs(player, stairs) {
+    const scene = player.scene;
+    
+    // Evitar activación múltiple
+    if (gameState.isChangingLevel) return;
+    gameState.isChangingLevel = true;
+    
+    // Desactivar movimiento del jugador
+    player.body.setVelocity(0, 0);
+    
+    // Reproducir sonido
+    scene.sounds.stairs();
+    
+    // Animación de transición
     scene.tweens.add({
-        targets: explosion,
-        scale: 2,
+        targets: player,
         alpha: 0,
-        duration: 500,
+        scale: 0.5,
+        duration: 800,
         onComplete: () => {
-            explosion.destroy();
+            // Aumentar nivel de mazmorra
+            gameState.dungeonLevel++;
+            
+            // Mensaje
+            addMessage(`Descendiendo al nivel ${gameState.dungeonLevel} de la mazmorra...`, "level");
+            
+            // Reiniciar escena
+            scene.scene.restart();
+            
+            // Restablecer flag
+            gameState.isChangingLevel = false;
         }
     });
     
-    // Eliminar enemigo
-    if (enemy.healthBar) enemy.healthBar.destroy();
-    if (enemy.sprite) enemy.sprite.destroy();
-    gameState.enemies = gameState.enemies.filter(e => e !== enemy);
+    // Efecto visual
+    scene.cameras.main.flash(800, 15, 52, 96);
     
-    // Incrementar contador de enemigos derrotados
-    gameState.enemiesKilled++;
+    // Efecto de partículas
+    const particles = scene.add.particles('player_texture');
+    const emitter = particles.createEmitter({
+        scale: { start: 0.4, end: 0 },
+        speed: 50,
+        lifespan: 800,
+        blendMode: 'ADD',
+        frequency: 50
+    });
     
-    // Ganar experiencia
-    const xpGained = enemy.xpReward;
-    gameState.playerStats.xp += xpGained;
+    emitter.startFollow(player);
     
-    // Mensaje
-    addMessage(`Has derrotado al enemigo y ganas ${xpGained} puntos de experiencia.`, "combat");
-    
-    // Comprobar subida de nivel
-    checkLevelUp();
-    
-    // Actualizar UI
-    updateUI();
-    
-    // Posibilidad de soltar objeto
-    if (getRandomInt(1, 100) <= 30) { // 30% de probabilidad
-        dropItem(scene, enemy.sprite.x, enemy.sprite.y);
-    }
+    // Limpiar partículas
+    scene.time.delayedCall(800, () => {
+        particles.destroy();
+    });
 }
 
 /**

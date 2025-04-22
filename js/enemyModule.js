@@ -26,32 +26,22 @@
 // 2. enemyAI.js
 // 3. combatEffects.js
 
-// Exportar todas las funciones
-const EnemyModule = {
+window.EnemyModule = {
     // Funciones de creación
-    placeEnemies,
-    createEnemy,
-    createEnemyHealthBar,
-    addEnemyEffects,
+    placeEnemies: window.placeEnemies || function(){},
+    createEnemy: window.createEnemy || function(){},
+    createEnemyHealthBar: window.createEnemyHealthBar || function(){},
+    addEnemyEffects: window.addEnemyEffects || function(){},
     
     // Funciones de IA
-    updateEnemies,
-    addMovementEffect,
-    checkInteraction,
+    updateEnemies: window.updateEnemies || function(){},
+    addMovementEffect: window.addMovementEffect || function(){},
+    checkInteraction: window.checkInteraction || function(){},
     
     // Efectos de combate
-    createAttackEffect,
-    createPlayerAttackEffect,
-    attackEnemy,
-    enemyAttack,
-    defeatEnemy
+    createAttackEffect: window.createAttackEffect || function(){},
+    createPlayerAttackEffect: window.createPlayerAttackEffect || function(){},
+    attackEnemy: window.attackEnemy || function(){},
+    enemyAttack: window.enemyAttack || function(){},
+    defeatEnemy: window.defeatEnemy || function(){}
 };
-
-// Exportar el módulo
-if (typeof window !== 'undefined') {
-    // Entorno de navegador
-    window.EnemyModule = EnemyModule;
-} else if (typeof module !== 'undefined' && module.exports) {
-    // Entorno Node.js
-    module.exports = EnemyModule;
-}

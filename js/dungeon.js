@@ -259,6 +259,18 @@ function addRoomBorders(scene, room) {
 }
 
 /**
+ * Comprueba si una casilla es una pared
+ */
+function isWall(x, y) {
+    // Comprobar límites del mapa
+    if (x < 0 || x >= CONFIG.mapWidth || y < 0 || y >= CONFIG.mapHeight) {
+        return true; // Todo fuera del mapa se considera pared
+    }
+    
+    return gameState.map[y][x] === 1; // 1 = pared, 0 = suelo
+}
+
+/**
  * Añade decoraciones al mapa
  */
 function addDecorations(scene) {
@@ -550,6 +562,84 @@ function createTestRoom(scene) {
     }
     
     console.log("Creada sala de prueba:", testRoom);
+}
+
+/**
+ * Crea un corredor horizontal en el mapa
+ */
+function createHorizontalCorridor(scene, startX, endX, y) {
+    const start = Math.min(startX, endX);
+    const end = Math.max(startX, endX);
+    
+    for (let x = start; x <= end; x++) {
+        // Comprobar límites del mapa
+        if (x >= 0 && x < CONFIG.mapWidth && y >= 0 && y < CONFIG.mapHeight) {
+            // Marcar como suelo
+            gameState.map[y][x] = 0;
+            
+            // Dibujar suelo (usar el tipo 0 por defecto)
+            drawFloorTile(scene, x, y, 0);
+        }
+    }
+}
+
+/**
+ * Crea un corredor vertical en el mapa
+ */
+function createVerticalCorridor(scene, startY, endY, x) {
+    const start = Math.min(startY, endY);
+    const end = Math.max(startY, endY);
+    
+    for (let y = start; y <= end; y++) {
+        // Comprobar límites del mapa
+        if (x >= 0 && x < CONFIG.mapWidth && y >= 0 && y < CONFIG.mapHeight) {
+            // Marcar como suelo
+            gameState.map[y][x] = 0;
+            
+            // Dibujar suelo (usar el tipo 0 por defecto)
+            drawFloorTile(scene, x, y, 0);
+        }
+    }
+}
+
+/**
+ * Dibuja una baldosa de suelo en la posición dada
+ */
+function drawFloorTile(scene, x, y, type) {
+    // Esta función podría faltar en el código, definirla si no existe
+    if (!window.drawFloorTile) {
+        window.drawFloorTile = function(scene, x, y, type) {
+            // Crear gráfico para el suelo
+            const floorGraphic = scene.add.graphics();
+            
+            // Determinar color según tipo de sala
+            const floorColors = [0x222831, 0x1a1a2e, 0x0f3460, 0x16213e];
+            const floorColor = floorColors[type % floorColors.length];
+            
+            // Dibujar cuadrado
+            floorGraphic.fillStyle(floorColor, 1);
+            floorGraphic.fillRect(
+                x * CONFIG.tileSize, 
+                y * CONFIG.tileSize, 
+                CONFIG.tileSize, 
+                CONFIG.tileSize
+            );
+            
+            // Añadir un poco de variación visual con líneas tenues
+            floorGraphic.lineStyle(1, 0x000000, 0.1);
+            floorGraphic.strokeRect(
+                x * CONFIG.tileSize + 0.5, 
+                y * CONFIG.tileSize + 0.5, 
+                CONFIG.tileSize - 1, 
+                CONFIG.tileSize - 1
+            );
+            
+            floorGraphic.setDepth(0);
+        };
+    }
+    
+    // Llamar a la función (ya sea la existente o la que acabamos de definir)
+    window.drawFloorTile(scene, x, y, type);
 }
 
 /**
