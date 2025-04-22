@@ -19,12 +19,36 @@ class GameScene extends Phaser.Scene {
         
         // Sonidos del juego mediante callbacks a funciones de Web Audio API
         this.sounds = {
-            hit: function() { AudioManager.playSound('hit'); },
-            pickup: function() { AudioManager.playSound('pickup'); },
-            levelup: function() { AudioManager.playSound('levelup'); },
-            stairs: function() { AudioManager.playSound('stairs'); },
-            enemyDeath: function() { AudioManager.playSound('enemyDeath'); },
-            playerDeath: function() { AudioManager.playSound('playerDeath'); }
+            hit: function() { 
+                if (AudioManager && typeof AudioManager.playSound === 'function') {
+                    AudioManager.playSound('hit'); 
+                }
+            },
+            pickup: function() { 
+                if (AudioManager && typeof AudioManager.playSound === 'function') {
+                    AudioManager.playSound('pickup'); 
+                }
+            },
+            levelup: function() { 
+                if (AudioManager && typeof AudioManager.playSound === 'function') {
+                    AudioManager.playSound('levelup'); 
+                }
+            },
+            stairs: function() { 
+                if (AudioManager && typeof AudioManager.playSound === 'function') {
+                    AudioManager.playSound('stairs'); 
+                }
+            },
+            enemyDeath: function() { 
+                if (AudioManager && typeof AudioManager.playSound === 'function') {
+                    AudioManager.playSound('enemyDeath'); 
+                }
+            },
+            playerDeath: function() { 
+                if (AudioManager && typeof AudioManager.playSound === 'function') {
+                    AudioManager.playSound('playerDeath'); 
+                }
+            }
         };
         
         // Generar mazmorra
@@ -103,10 +127,6 @@ class GameScene extends Phaser.Scene {
         processStatusEffects(this);
     }
 }
-
-EnemyModule.attackEnemy(scene, enemy);
-EnemyModule.enemyAttack(scene, enemy, player);
-EnemyModule.defeatEnemy(scene, enemy);
 
 /**
  * Recoge un objeto
