@@ -616,9 +616,78 @@ function defeatEnemy(scene, enemy) {
     // Actualizar UI
     updateUI();
     
-        // Posibilidad de soltar objeto (aumenta con nivel del enemigo)
+    // Posibilidad de soltar objeto (aumenta con nivel del enemigo)
+    const dropChance = 30 + (enemy.level * 3); // Base 30% + 3% por nivel
+    if (getRandomInt(1, 100) <= dropChance) {
+        dropItem(scene, enemy.sprite.x, enemy.sprite.y);
     }
+}
 
+/**
+ * Comprueba interacción con espacio (atacar o interactuar)
+ */
+function checkInteraction(scene, player) {
+    // Buscar enemigos cercanos
+    const nearbyEnemies = [];
+    
+    for (const enemy of gameState.enemies) {
+        if (!enemy.sprite || !enemy.sprite.active) continue;
+        
+        const distance = Phaser.Math.Distance.Between(
+            player.x, player.y,
+            enemy.sprite.x, enemy.sprite.y
+        );
+        
+        if (distance < 50) { // Radio de ataque ligeramente aumentado
+            nearbyEnemies.push(enemy);
+        }
+    }
+    
+    if (nearbyEnemies.length > 0) {
+        // Si hay múltiples enemigos, ordenarlos por distancia
+        if (nearbyEnemies.length > 1) {
+            nearbyEnemies.sort((a, b) => {
+                const distA = Phaser.Math.Distance.Between(
+                    player.x, player.y, a.sprite.x, a.sprite.y
+                );
+                const distB = Phaser.Math.Distance.Between(
+                    player.x, player.y, b.sprite.x, b.sprite.y
+                );
+                return distA - distB;
+            });
+        }
+        
+        // Atacar al enemigo más cercano
+        attackEnemy(scene, nearbyEnemies[0]);
+        
+        // Crear línea de ataque desde el jugador al enemigo (efecto visual adicional)
+        const lineGraphic = scene.add.graphics();
+        lineGraphic.lineStyle(2, 0xffffff, 0.5);
+        lineGraphic.beginPath();
+        lineGraphic.moveTo(player.x, player.y);
+        lineGraphic.lineTo(nearbyEnemies[0].sprite.x, nearbyEnemies[0].sprite.y);
+        lineGraphic.strokePath();
+        lineGraphic.setDepth(8);
+        
+        // Animar la línea de ataque
+        scene.tweens.add({
+            targets: lineGraphic,
+            alpha: 0,
+            duration: 150,
+            onComplete: () => {
+                lineGraphic.destroy();
+            }
+        });
+        
+        return true;
+    }
+    
+    // Comprobar interacción con otros elementos
+    // Por ejemplo, interactuar con escaleras o elementos del escenario
+    return false;
+}/**
+ * Funciones relacionadas con los enemigos del juego
+ */
 
 /**
  * Coloca enemigos en las salas de la mazmorra con diseños visuales mejorados
