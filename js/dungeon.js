@@ -6,6 +6,50 @@
  * Genera una mazmorra procedural
  */
 function generateDungeon(scene) {
+    // Añadir mensaje para verificar que la generación se está ejecutando
+    console.log("Iniciando generación de mazmorra...");
+    
+    // Crear una sala de prueba forzada para verificar el renderizado
+    // Esta sala ocupará casi todo el mapa para facilitar su visualización
+    gameState.map = [];
+    for (let y = 0; y < CONFIG.mapHeight; y++) {
+        const row = [];
+        for (let x = 0; x < CONFIG.mapWidth; x++) {
+            // Hacer que el centro del mapa sea suelo y el borde paredes
+            if (x > 2 && x < CONFIG.mapWidth - 3 && y > 2 && y < CONFIG.mapHeight - 3) {
+                row.push(0); // Suelo
+            } else {
+                row.push(1); // Pared
+            }
+        }
+        gameState.map.push(row);
+    }
+    
+    // Crear una sola sala que ocupe casi todo el mapa
+    const testRoom = {
+        x: 3,
+        y: 3,
+        width: CONFIG.mapWidth - 6,
+        height: CONFIG.mapHeight - 6,
+        centerX: Math.floor(CONFIG.mapWidth / 2),
+        centerY: Math.floor(CONFIG.mapHeight / 2)
+    };
+    
+    gameState.rooms = [testRoom];
+    
+    // Dibujar esta sala simple
+    for (let y = 0; y < CONFIG.mapHeight; y++) {
+        for (let x = 0; x < CONFIG.mapWidth; x++) {
+            if (gameState.map[y][x] === 0) {
+                drawFloorTile(scene, x, y);
+            } else {
+                createWall(scene, x, y);
+            }
+        }
+    }
+    
+    console.log("Mazmorra generada con éxito");
+
     // Crear un mapa básico (sin usar tilemap para no depender de assets externos)
     setupBasicMap(scene);
     
