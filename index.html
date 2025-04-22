@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mazmorra Infinita - Roguelike</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <h1 class="title">Mazmorra Infinita</h1>
+    <div id="game-container">
+        <div id="ui-container">
+            <div id="player-stats">
+                <div class="stat">
+                    <span>Nivel:</span>
+                    <span id="level">1</span>
+                </div>
+                <div class="stat">
+                    <span>Salud:</span>
+                    <span><span id="health">100</span>/<span id="max-health">100</span></span>
+                </div>
+                <div class="health-bar">
+                    <div class="fill" style="width: 100%;"></div>
+                </div>
+                <div class="stat">
+                    <span>Experiencia:</span>
+                    <span><span id="xp">0</span>/<span id="next-level">100</span></span>
+                </div>
+                <div class="xp-bar">
+                    <div class="fill" style="width: 0%;"></div>
+                </div>
+                <div class="stat">
+                    <span>Ataque:</span>
+                    <span id="attack">10</span>
+                </div>
+                <div class="stat">
+                    <span>Defensa:</span>
+                    <span id="defense">5</span>
+                </div>
+                <div class="stat">
+                    <span>Mazmorra:</span>
+                    <span id="dungeon-level">1</span>
+                </div>
+                <div id="status-effects"></div>
+            </div>
+        </div>
+        <div id="message-log"></div>
+        <div id="inventory">
+            <h3>Inventario</h3>
+            <div id="inventory-items"></div>
+        </div>
+        <div class="controls">
+            <div>WASD o Flechas: Mover</div>
+            <div>E: Inventario</div>
+            <div>Espacio: Atacar/Interactuar</div>
+            <div>P: Pausa</div>
+        </div>
+    </div>
+
+    <div id="loading">
+        <h2>Cargando Mazmorra Infinita...</h2>
+        <div id="loading-bar">
+            <div id="loading-fill"></div>
+        </div>
+    </div>
+
+    <div id="main-menu" class="menu">
+        <h2>Mazmorra Infinita</h2>
+        <div class="menu-option" id="start-game">Comenzar Partida</div>
+        <div class="menu-option" id="how-to-play">Cómo Jugar</div>
+    </div>
+
+    <div id="pause-menu" class="menu">
+        <h2>Juego Pausado</h2>
+        <div class="menu-option" id="resume-game">Continuar</div>
+        <div class="menu-option" id="restart-game">Reiniciar</div>
+    </div>
+
+    <div id="game-over" class="modal">
+        <h2>¡Has Muerto!</h2>
+        <p>Nivel alcanzado: <span id="final-level">1</span></p>
+        <p>Nivel de mazmorra: <span id="final-dungeon">1</span></p>
+        <p>Enemigos derrotados: <span id="enemies-killed">0</span></p>
+        <div class="modal-buttons">
+            <div class="modal-button" id="try-again">Intentar de nuevo</div>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal">
+        <h2>Cómo Jugar</h2>
+        <p>Eres un aventurero en una mazmorra infinita. Tu objetivo es sobrevivir y descender lo más profundo posible.</p>
+        <p><strong>Controles:</strong></p>
+        <ul>
+            <li>WASD o Flechas: Mover al personaje</li>
+            <li>E: Abrir/cerrar inventario</li>
+            <li>Espacio: Atacar (cuando estás junto a un enemigo) o interactuar</li>
+            <li>P: Pausar juego</li>
+        </ul>
+        <p><strong>Consejos:</strong></p>
+        <ul>
+            <li>Busca objetos para mejorar tus estadísticas</li>
+            <li>Derrotar enemigos te da experiencia para subir de nivel</li>
+            <li>Algunas pociones pueden curarte, pero otras pueden ser venenosas</li>
+            <li>Las escaleras te llevan al siguiente nivel de la mazmorra</li>
+        </ul>
+        <div class="modal-buttons">
+            <div class="modal-button confirm" id="close-help">Entendido</div>
+        </div>
+    </div>
+
+    <!-- Cargar Phaser desde CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
+    
+    <!-- Scripts del juego -->
+    <script src="js/utils.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/item.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/dungeon.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
