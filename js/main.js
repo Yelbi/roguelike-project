@@ -8,6 +8,8 @@ const gameConfig = {
     width: 800,
     height: 600,
     parent: 'game-container',
+    pixelArt: true,
+    backgroundColor: '#16213e',
     physics: {
         default: 'arcade',
         arcade: {
@@ -20,12 +22,21 @@ const gameConfig = {
         pixelArt: true,
         antialias: false,
         roundPixels: true,
+        willReadFrequently: true,
+        powerPreference: 'high-performance'
+    },
+    canvas: {
         willReadFrequently: true
     },
     callbacks: {
         preBoot: function(game) {
+            console.log("Configurando willReadFrequently...");
             if (game.canvas) {
-                const ctx = game.canvas.getContext('2d', { willReadFrequently: true });
+                game.canvas.setAttribute('willReadFrequently', 'true');
+                const ctx = game.canvas.getContext('2d', { 
+                    willReadFrequently: true,
+                    alpha: false
+                });
                 if (ctx) {
                     game.canvas.getContext = function() {
                         return ctx;

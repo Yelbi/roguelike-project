@@ -38,26 +38,20 @@ function setupBasicMap(scene) {
         gameState.map.push(row);
     }
     
-    // Crear capa de paredes
-    if (gameState.wallsLayer) {
-        // Comprobamos primero si es un grupo válido
-        if (gameState.wallsLayer.clear && typeof gameState.wallsLayer.clear === 'function') {
-            gameState.wallsLayer.clear(true, true);
-        } else {
-            // Si no existe un grupo válido, lo creamos
-            gameState.wallsLayer = scene.physics.add.staticGroup();
-        }
-    } else {
-        // Si no existe en absoluto, lo creamos
-        gameState.wallsLayer = scene.physics.add.staticGroup();
+    // Limpiar cualquier grupo existente primero
+    if (gameState.wallsLayer && typeof gameState.wallsLayer.destroy === 'function') {
+        gameState.wallsLayer.destroy(true, true);
+        gameState.wallsLayer = null;
     }
     
-    // Inicializar capa de suelo
-    if (!gameState.floorLayer) {
-        gameState.floorLayer = scene.add.group();
-    } else if (gameState.floorLayer.clear && typeof gameState.floorLayer.clear === 'function') {
-        gameState.floorLayer.clear(true, true);
+    if (gameState.floorLayer && typeof gameState.floorLayer.destroy === 'function') {
+        gameState.floorLayer.destroy(true, true);
+        gameState.floorLayer = null;
     }
+    
+    // Crear nuevos grupos
+    gameState.wallsLayer = scene.physics.add.staticGroup();
+    gameState.floorLayer = scene.add.group();
 }
 
 function drawFloorTile(scene, x, y) {
@@ -196,14 +190,6 @@ function generateRooms(scene) {
     }
     
     console.log(`Generadas ${gameState.rooms.length} salas después de ${attempts} intentos`);
-}
-
-/**
- * Dibuja una baldosa de suelo
- */
-function drawFloorTile(scene, x, y) {
-    // Crear el suelo físico para colisiones
-    // En una implementación completa, esto crearía tiles visuales
 }
 
 /**

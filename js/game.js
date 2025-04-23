@@ -283,11 +283,37 @@ function useStairs(player, stairs) {
             // Mensaje
             addMessage(`Descendiendo al nivel ${gameState.dungeonLevel} de la mazmorra...`);
             
+            // Limpiar recursos antes de reiniciar
+            cleanupLevel(scene);
+            
             // Reiniciar escena
             scene.scene.restart();
             
             // Restablecer flag
             gameState.isChangingLevel = false;
+        }
+    });
+}
+
+function cleanupLevel(scene) {
+    // Limpiar grupos y objetos
+    if (gameState.itemsGroup) {
+        gameState.itemsGroup.clear(true, true);
+    }
+    
+    if (gameState.enemiesGroup) {
+        gameState.enemiesGroup.clear(true, true);
+    }
+    
+    // Limpiar texturas no utilizadas
+    Object.keys(scene.textures.list).forEach(key => {
+        // Solo eliminar texturas generadas dinámicamente
+        if (key.includes('_texture') || key.includes('portal_texture')) {
+            try {
+                scene.textures.remove(key);
+            } catch (e) {
+                console.log("No se pudo eliminar textura:", key);
+            }
         }
     });
 }

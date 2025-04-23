@@ -113,24 +113,3 @@ function getItemImageUrl(type) {
     // Crear un círculo simple como SVG para representar el objeto
     return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="%23' + color + '"/></svg>';
 }
-
-/**
- * Obtiene una URL de imagen para representar un objeto
- */
-function getItemImageUrl(type) {
-    // Colores básicos para los diferentes tipos de objetos
-    const colors = [
-        "2ecc71", // Salud (verde)
-        "e74c3c", // Ataque (rojo)
-        "3498db", // Defensa (azul)
-        "9b59b6", // Experiencia (púrpura)
-        "1abc9c", // Vida máxima (turquesa)
-        "f39c12"  // Misterio (naranja)
-    ];
-    
-    // Usar el color correspondiente al tipo
-    const color = colors[type % colors.length];
-    
-    // Crear un círculo simple como SVG para representar el objeto
-    return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="%23' + color + '"/></svg>';
-}
