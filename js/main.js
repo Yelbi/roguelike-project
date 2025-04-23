@@ -63,11 +63,35 @@ const gameConfig = {
             debug: false // Activar para ver colisiones
         }
     },
-    scene: [GameScene]
+    scene: [GameScene],
+    render: {
+        pixelArt: true,
+        antialias: false,
+        roundPixels: true,
+        willReadFrequently: true
+    },
+    callbacks: {
+        preBoot: function(game) {
+            console.log('preBoot: Phaser está iniciando');
+            // Aplicar configuración willReadFrequently al canvas del juego
+            if (game.canvas) {
+                const ctx = game.canvas.getContext('2d', { willReadFrequently: true });
+                if (ctx) {
+                    // Asignar el contexto optimizado
+                    game.canvas.getContext = function(type) {
+                        return ctx;
+                    };
+                }
+            }
+        }
+    }
 };
 
 // Inicializar el juego cuando se cargue la página
 window.onload = function() {
+    // Instalar parches
+    installPatches();
+    
     setupEventListeners();
     
     // Verificar que todos los componentes necesarios estén disponibles
