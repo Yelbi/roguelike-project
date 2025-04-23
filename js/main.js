@@ -22,26 +22,18 @@ const gameConfig = {
         pixelArt: true,
         antialias: false,
         roundPixels: true,
-        willReadFrequently: true,
         powerPreference: 'high-performance'
     },
-    canvas: {
-        willReadFrequently: true
-    },
+    // Especificar el tipo de renderizado explícitamente
+    renderType: Phaser.CANVAS,
+    // Simplificar la configuración del canvas
+    canvasStyle: 'display: block; margin: 0 auto;',
+    // No es necesario el willReadFrequently aquí, lo configuraremos tras crear el juego
     callbacks: {
-        preBoot: function(game) {
-            console.log("Configurando willReadFrequently...");
+        postBoot: function(game) {
+            // Configurar willReadFrequently en el canvas después de que el juego arranque
             if (game.canvas) {
                 game.canvas.setAttribute('willReadFrequently', 'true');
-                const ctx = game.canvas.getContext('2d', { 
-                    willReadFrequently: true,
-                    alpha: false
-                });
-                if (ctx) {
-                    game.canvas.getContext = function() {
-                        return ctx;
-                    };
-                }
             }
         }
     }
@@ -110,6 +102,11 @@ function startGame() {
         
         // Crear nueva instancia del juego
         window.gameInstance = new Phaser.Game(gameConfig);
+        
+        // Configurar willReadFrequently después de la creación
+        if (window.gameInstance && window.gameInstance.canvas) {
+            window.gameInstance.canvas.setAttribute('willReadFrequently', 'true');
+        }
         
     } catch (error) {
         console.error("Error al iniciar el juego:", error);

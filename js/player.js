@@ -24,8 +24,8 @@ function createPlayer(scene) {
     playerGraphic.lineStyle(2, 0xffffff, 1);
     playerGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.4);
     
-    // Crear textura
-    const playerTexture = playerGraphic.generateTexture('player_texture', CONFIG.tileSize, CONFIG.tileSize);
+    // Generar textura
+    playerGraphic.generateTexture('player_texture', CONFIG.tileSize, CONFIG.tileSize);
     playerGraphic.destroy();
     
     // Crear sprite con físicas

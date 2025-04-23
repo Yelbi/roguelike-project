@@ -316,18 +316,22 @@ function placeStairs(scene) {
         const stairsX = lastRoom.centerX * CONFIG.tileSize + (CONFIG.tileSize / 2);
         const stairsY = lastRoom.centerY * CONFIG.tileSize + (CONFIG.tileSize / 2);
         
-        // Crear gráfico para las escaleras
-        const stairsGraphic = scene.add.graphics({ willReadFrequently: true });
-        stairsGraphic.fillStyle(0x8e44ad, 0.8); // Púrpura
-        stairsGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.4);
-        // Añadir borde blanco para mejor visibilidad
-        stairsGraphic.lineStyle(2, 0xffffff, 1);
-        stairsGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.4);
-        
-        // Generar textura
+        // Verificar si la textura ya existe para evitar recrearla
         const stairsTextureKey = 'portal_texture';
-        stairsGraphic.generateTexture(stairsTextureKey, CONFIG.tileSize, CONFIG.tileSize);
-        stairsGraphic.destroy();
+        
+        if (!scene.textures.exists(stairsTextureKey)) {
+            // Crear gráfico para las escaleras
+            const stairsGraphic = scene.add.graphics({ willReadFrequently: true });
+            stairsGraphic.fillStyle(0x8e44ad, 0.8); // Púrpura
+            stairsGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.4);
+            // Añadir borde blanco para mejor visibilidad
+            stairsGraphic.lineStyle(2, 0xffffff, 1);
+            stairsGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.4);
+            
+            // Generar textura
+            stairsGraphic.generateTexture(stairsTextureKey, CONFIG.tileSize, CONFIG.tileSize);
+            stairsGraphic.destroy();
+        }
         
         // Crear sprite con físicas
         gameState.stairs = scene.physics.add.sprite(stairsX, stairsY, stairsTextureKey);

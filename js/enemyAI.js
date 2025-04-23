@@ -279,18 +279,22 @@ function placeEnemies(scene) {
  * Crea un enemigo
  */
 function createEnemy(scene, x, y, enemyType, typeIndex, level) {
-    // Crear gráfico para el enemigo
-    const enemyGraphic = scene.add.graphics({ willReadFrequently: true });
-    enemyGraphic.fillStyle(enemyType.color, 1);
-    enemyGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.4);
-    // Añadir borde negro para mejor visibilidad
-    enemyGraphic.lineStyle(2, 0x000000, 1);
-    enemyGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.4);
-    
-    // Generar textura
+    // Verificar si la textura ya existe para evitar regenerarla
     const enemyTextureKey = `enemy_${typeIndex}_lvl_${level}_texture`;
-    enemyGraphic.generateTexture(enemyTextureKey, CONFIG.tileSize, CONFIG.tileSize);
-    enemyGraphic.destroy();
+    
+    if (!scene.textures.exists(enemyTextureKey)) {
+        // Crear gráfico para el enemigo
+        const enemyGraphic = scene.add.graphics({ willReadFrequently: true });
+        enemyGraphic.fillStyle(enemyType.color, 1);
+        enemyGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.4);
+        // Añadir borde negro para mejor visibilidad
+        enemyGraphic.lineStyle(2, 0x000000, 1);
+        enemyGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.4);
+        
+        // Generar textura
+        enemyGraphic.generateTexture(enemyTextureKey, CONFIG.tileSize, CONFIG.tileSize);
+        enemyGraphic.destroy();
+    }
     
     // Crear sprite
     const enemy = scene.physics.add.sprite(x, y, enemyTextureKey);

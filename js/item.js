@@ -72,18 +72,23 @@ function placeItems(scene) {
  * Crea un objeto
  */
 function createItem(scene, x, y, itemType, typeIndex, level) {
-    // Crear gráfico para el objeto
-    const itemGraphic = scene.add.graphics({ willReadFrequently: true });
-    itemGraphic.fillStyle(itemType.color, 1);
-    itemGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.3);
-    // Añadir borde blanco para mejor visibilidad
-    itemGraphic.lineStyle(2, 0xffffff, 1);
-    itemGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.3);
-    
-    // Generar textura
+    // Clave de textura para este tipo y nivel de ítem
     const itemTextureKey = `item_${typeIndex}_lvl_${level}_texture`;
-    itemGraphic.generateTexture(itemTextureKey, CONFIG.tileSize, CONFIG.tileSize);
-    itemGraphic.destroy();
+    
+    // Verificar si la textura ya existe para evitar recrearla
+    if (!scene.textures.exists(itemTextureKey)) {
+        // Crear gráfico para el objeto
+        const itemGraphic = scene.add.graphics({ willReadFrequently: true });
+        itemGraphic.fillStyle(itemType.color, 1);
+        itemGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.3);
+        // Añadir borde blanco para mejor visibilidad
+        itemGraphic.lineStyle(2, 0xffffff, 1);
+        itemGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.3);
+        
+        // Generar textura
+        itemGraphic.generateTexture(itemTextureKey, CONFIG.tileSize, CONFIG.tileSize);
+        itemGraphic.destroy();
+    }
     
     // Crear sprite
     const itemSprite = scene.physics.add.sprite(x, y, itemTextureKey);
