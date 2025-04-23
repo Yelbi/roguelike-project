@@ -1,4 +1,4 @@
-// Archivo js/audioManager.js
+// Gestor de audio básico
 const AudioManager = {
     context: null,
     sounds: {},
@@ -55,7 +55,7 @@ const AudioManager = {
     
     playSound: function(name) {
         if (!this.initialized) {
-            console.warn("AudioManager no inicializado completamente al intentar reproducir:", name);
+            console.warn("AudioManager no inicializado al intentar reproducir:", name);
             return;
         }
         
@@ -74,5 +74,5 @@ window.addEventListener('load', () => {
     AudioManager.init();
 });
 
-// Exponer globalmente inmediatamente
+// Exponer globalmente
 window.AudioManager = AudioManager;

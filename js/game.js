@@ -6,48 +6,31 @@ class GameScene extends Phaser.Scene {
         super({ key: 'GameScene' });
     }
     
-    preload() {
-        // No necesitamos cargar recursos externos, usamos gráficos generados dinámicamente
-        console.log("GameScene: preload iniciado");
-    }
-    
     create() {
         console.log("GameScene: create iniciado");
         
-        // Guardar referencia a la escena para usar en otras funciones
+        // Guardar referencia a la escena
         this.scene.scene = this;
         
-        // Sonidos del juego mediante callbacks a funciones de Web Audio API
+        // Sonidos básicos del juego
         this.sounds = {
             hit: function() { 
-                if (AudioManager && typeof AudioManager.playSound === 'function') {
-                    AudioManager.playSound('hit'); 
-                }
+                if (AudioManager) AudioManager.playSound('hit'); 
             },
             pickup: function() { 
-                if (AudioManager && typeof AudioManager.playSound === 'function') {
-                    AudioManager.playSound('pickup'); 
-                }
+                if (AudioManager) AudioManager.playSound('pickup'); 
             },
             levelup: function() { 
-                if (AudioManager && typeof AudioManager.playSound === 'function') {
-                    AudioManager.playSound('levelup'); 
-                }
+                if (AudioManager) AudioManager.playSound('levelup'); 
             },
             stairs: function() { 
-                if (AudioManager && typeof AudioManager.playSound === 'function') {
-                    AudioManager.playSound('stairs'); 
-                }
+                if (AudioManager) AudioManager.playSound('stairs'); 
             },
             enemyDeath: function() { 
-                if (AudioManager && typeof AudioManager.playSound === 'function') {
-                    AudioManager.playSound('enemyDeath'); 
-                }
+                if (AudioManager) AudioManager.playSound('enemyDeath'); 
             },
             playerDeath: function() { 
-                if (AudioManager && typeof AudioManager.playSound === 'function') {
-                    AudioManager.playSound('playerDeath'); 
-                }
+                if (AudioManager) AudioManager.playSound('playerDeath'); 
             }
         };
         
@@ -94,23 +77,17 @@ class GameScene extends Phaser.Scene {
         
         // Overlap con ítems
         if (gameState.itemsGroup) {
-            this.physics.add.overlap(this.player, gameState.itemsGroup, (player, itemSprite) => {
-                collectItem(this, player, itemSprite);
-            }, null, this);
+            this.physics.add.overlap(this.player, gameState.itemsGroup, collectItem);
         }
         
         // Overlap con escaleras
         if (gameState.stairs) {
-            this.physics.add.overlap(this.player, gameState.stairs, (player, stairs) => {
-                useStairs(player, stairs);
-            }, null, this);
+            this.physics.add.overlap(this.player, gameState.stairs, useStairs);
         }
         
         // Inicializar UI
         updateUI();
-        addMessage(`Bienvenido al nivel ${gameState.dungeonLevel} de la mazmorra.`, "level");
-        
-        console.log("GameScene: create completado");
+        addMessage(`Bienvenido al nivel ${gameState.dungeonLevel} de la mazmorra.`);
     }
     
     update() {
@@ -122,61 +99,36 @@ class GameScene extends Phaser.Scene {
         
         // Actualizar enemigos
         updateEnemies(this, this.player);
-        
-        // Actualizar efectos de estado
-        processStatusEffects(this);
     }
 }
 
 /**
  * Recoge un objeto
  */
-function collectItem(scene, player, itemSprite) {
-    // Buscar el objeto en el array
+function collectItem(player, itemSprite) {
+    const scene = player.scene;
     const itemIndex = gameState.items.findIndex(item => item.sprite === itemSprite);
     
     if (itemIndex !== -1) {
         const item = gameState.items[itemIndex];
         
-        // Reproducir sonido
         scene.sounds.pickup();
         
-        // Añadir al inventario
         gameState.inventory.push({
             type: item.type,
             level: item.level,
             name: item.name
         });
         
-        // Mensaje
-        addMessage(`Has recogido: ${item.name}`, "item");
+        addMessage(`Has recogido: ${item.name}`);
         
-        // Efecto visual
-        const pickupEffect = scene.add.sprite(itemSprite.x, itemSprite.y, 'player_texture');
-        pickupEffect.setScale(0.5);
-        pickupEffect.setAlpha(0.7);
-        pickupEffect.setTint(0xffffff);
-        
-        scene.tweens.add({
-            targets: pickupEffect,
-            scale: 2,
-            alpha: 0,
-            duration: 500,
-            onComplete: () => {
-                pickupEffect.destroy();
-            }
-        });
-        
-        // Limpiar recursos
         if (item.particles) {
             item.particles.destroy();
         }
         
-        // Eliminar objeto
         itemSprite.destroy();
         gameState.items.splice(itemIndex, 1);
         
-        // Actualizar inventario
         updateInventoryUI();
     }
 }
@@ -189,10 +141,7 @@ function useItem(index) {
         const item = gameState.inventory[index];
         const scene = getActiveScene();
         
-        if (!scene || !scene.player) {
-            console.error("No se puede usar objeto: escena o jugador no disponible");
-            return;
-        }
+        if (!scene || !scene.player) return;
         
         // Aplicar efecto según tipo
         switch (item.type) {
@@ -202,29 +151,25 @@ function useItem(index) {
                     gameState.playerStats.health + healAmount,
                     gameState.playerStats.maxHealth
                 );
-                createItemUseEffect(scene, scene.player, 0x9bdc28, `+${healAmount} Salud`, item.level);
-                addMessage(`Has usado ${item.name} y recuperas ${healAmount} puntos de salud.`, "item");
+                addMessage(`Has usado ${item.name} y recuperas ${healAmount} puntos de salud.`);
                 break;
                 
             case 1: // Poción de Fuerza
                 const attackBonus = 2 + item.level;
                 gameState.playerStats.attack += attackBonus;
-                createItemUseEffect(scene, scene.player, 0xe94560, `+${attackBonus} Fuerza`, item.level);
-                addMessage(`Has usado ${item.name} y tu ataque aumenta en ${attackBonus}.`, "item");
+                addMessage(`Has usado ${item.name} y tu ataque aumenta en ${attackBonus}.`);
                 break;
                 
             case 2: // Poción de Defensa
                 const defenseBonus = 1 + Math.floor(item.level / 2);
                 gameState.playerStats.defense += defenseBonus;
-                createItemUseEffect(scene, scene.player, 0x4285f4, `+${defenseBonus} Defensa`, item.level);
-                addMessage(`Has usado ${item.name} y tu defensa aumenta en ${defenseBonus}.`, "item");
+                addMessage(`Has usado ${item.name} y tu defensa aumenta en ${defenseBonus}.`);
                 break;
                 
             case 3: // Poción de Experiencia
                 const xpGain = 25 + (item.level * 25);
                 gameState.playerStats.xp += xpGain;
-                createItemUseEffect(scene, scene.player, 0x9c42f4, `+${xpGain} XP`, item.level);
-                addMessage(`Has usado ${item.name} y ganas ${xpGain} puntos de experiencia.`, "item");
+                addMessage(`Has usado ${item.name} y ganas ${xpGain} puntos de experiencia.`);
                 checkLevelUp();
                 break;
                 
@@ -232,77 +177,38 @@ function useItem(index) {
                 const maxHealthBonus = 5 + (item.level * 5);
                 gameState.playerStats.maxHealth += maxHealthBonus;
                 gameState.playerStats.health += maxHealthBonus;
-                createItemUseEffect(scene, scene.player, 0x42cef4, `+${maxHealthBonus} Vida Máx.`, item.level);
-                addMessage(`Has usado ${item.name} y tu salud máxima aumenta en ${maxHealthBonus}.`, "item");
+                addMessage(`Has usado ${item.name} y tu salud máxima aumenta en ${maxHealthBonus}.`);
                 break;
                 
             case 5: // Poción Misteriosa
-                // Efecto aleatorio
-                const effects = [
-                    // Efectos positivos
-                    () => {
-                        const healAmount = 30 + (item.level * 15);
-                        gameState.playerStats.health = Math.min(
-                            gameState.playerStats.health + healAmount,
-                            gameState.playerStats.maxHealth
-                        );
-                        createItemUseEffect(scene, scene.player, 0x9bdc28, `+${healAmount} Salud`, item.level);
-                        addMessage(`La poción misteriosa te cura ${healAmount} puntos de salud.`, "item");
-                    },
-                    () => {
-                        const attackBonus = 3 + Math.floor(item.level * 1.5);
-                        gameState.playerStats.attack += attackBonus;
-                        createItemUseEffect(scene, scene.player, 0xe94560, `+${attackBonus} Fuerza`, item.level);
-                        addMessage(`La poción misteriosa aumenta tu ataque en ${attackBonus}.`, "item");
-                    },
-                    // Efectos neutrales
-                    () => {
-                        // Teletransporte a una sala aleatoria
-                        if (gameState.rooms.length > 0) {
-                            const randomRoom = gameState.rooms[getRandomInt(0, gameState.rooms.length - 1)];
-                            scene.player.x = randomRoom.centerX * CONFIG.tileSize + (CONFIG.tileSize / 2);
-                            scene.player.y = randomRoom.centerY * CONFIG.tileSize + (CONFIG.tileSize / 2);
-                            createItemUseEffect(scene, scene.player, 0xf4a742, `¡Teletransporte!`, item.level);
-                            scene.cameras.main.flash(500, 234, 255, 255);
-                            addMessage(`La poción misteriosa te teletransporta a otra sala.`, "item");
-                        }
-                    },
-                    // Efectos negativos (solo con probabilidad baja)
-                    () => {
-                        if (Math.random() < 0.3) {
-                            const damage = Math.max(1, Math.floor(gameState.playerStats.health * 0.1));
-                            gameState.playerStats.health -= damage;
-                            createItemUseEffect(scene, scene.player, 0xff0000, `-${damage} Salud`, item.level);
-                            addMessage(`¡La poción misteriosa te envenena y pierdes ${damage} puntos de salud!`, "item");
-                            // Comprobar muerte
-                            if (gameState.playerStats.health <= 0) {
-                                playerDeath(scene);
-                            }
-                        } else {
-                            // Efecto positivo aleatorio como fallback
-                            const healAmount = 20 + (item.level * 10);
-                            gameState.playerStats.health = Math.min(
-                                gameState.playerStats.health + healAmount,
-                                gameState.playerStats.maxHealth
-                            );
-                            createItemUseEffect(scene, scene.player, 0x9bdc28, `+${healAmount} Salud`, item.level);
-                            addMessage(`La poción misteriosa te cura ${healAmount} puntos de salud.`, "item");
-                        }
-                    }
-                ];
-                
-                // Elegir un efecto aleatorio
-                effects[getRandomInt(0, effects.length - 1)]();
+                // Efecto aleatorio básico
+                const randomEffect = getRandomInt(0, 3);
+                if (randomEffect === 0) {
+                    // Curación
+                    const healAmount = 30 + (item.level * 15);
+                    gameState.playerStats.health = Math.min(
+                        gameState.playerStats.health + healAmount,
+                        gameState.playerStats.maxHealth
+                    );
+                    addMessage(`La poción misteriosa te cura ${healAmount} puntos de salud.`);
+                } else if (randomEffect === 1) {
+                    // Ataque
+                    const attackBonus = 3 + item.level;
+                    gameState.playerStats.attack += attackBonus;
+                    addMessage(`La poción misteriosa aumenta tu ataque en ${attackBonus}.`);
+                } else {
+                    // Defensa
+                    const defenseBonus = 2 + item.level;
+                    gameState.playerStats.defense += defenseBonus;
+                    addMessage(`La poción misteriosa aumenta tu defensa en ${defenseBonus}.`);
+                }
                 break;
         }
         
-        // Reproducir sonido
         scene.sounds.pickup();
         
-        // Actualizar UI
         updateUI();
         
-        // Eliminar del inventario
         gameState.inventory.splice(index, 1);
         updateInventoryUI();
     }
@@ -333,64 +239,10 @@ function checkLevelUp() {
         gameState.playerStats.defense += defenseBonus;
         
         // Mensaje
-        addMessage(`¡Has subido al nivel ${gameState.playerStats.level}! Salud +${healthBonus}, Ataque +${attackBonus}, Defensa +${defenseBonus}.`, "level");
+        addMessage(`¡Has subido al nivel ${gameState.playerStats.level}! Salud +${healthBonus}, Ataque +${attackBonus}, Defensa +${defenseBonus}.`);
         
-        // Efectos visuales
         if (scene && scene.player) {
-            // Reproducir sonido
             scene.sounds.levelup();
-            
-            // Efecto visual de subida de nivel
-            const levelUpEffect = scene.add.graphics();
-            levelUpEffect.fillStyle(0xffd369, 0.6);
-            levelUpEffect.fillCircle(0, 0, CONFIG.tileSize * 2);
-            
-            const effectTexture = levelUpEffect.generateTexture('levelup_effect', CONFIG.tileSize * 4, CONFIG.tileSize * 4);
-            levelUpEffect.destroy();
-            
-            const effect = scene.add.sprite(scene.player.x, scene.player.y, 'levelup_effect');
-            effect.setDepth(30);
-            
-            scene.tweens.add({
-                targets: effect,
-                scale: 2,
-                alpha: 0,
-                duration: 1000,
-                onComplete: () => {
-                    effect.destroy();
-                }
-            });
-            
-            // Sacudir ligeramente la cámara
-            scene.cameras.main.shake(300, 0.01);
-            
-            // Texto de "LEVEL UP!"
-            const levelText = scene.add.text(
-                scene.player.x, 
-                scene.player.y - 50, 
-                '¡NIVEL UP!', 
-                { 
-                    fontFamily: 'Arial', 
-                    fontSize: 24, 
-                    color: '#ffd369',
-                    stroke: '#000000',
-                    strokeThickness: 4,
-                    align: 'center'
-                }
-            );
-            levelText.setOrigin(0.5);
-            levelText.setDepth(31);
-            
-            scene.tweens.add({
-                targets: levelText,
-                y: levelText.y - 30,
-                scale: 1.5,
-                alpha: 0,
-                duration: 1500,
-                onComplete: () => {
-                    levelText.destroy();
-                }
-            });
         }
         
         // Actualizar UI
@@ -400,238 +252,6 @@ function checkLevelUp() {
         if (gameState.playerStats.xp >= gameState.playerStats.nextLevelXp) {
             checkLevelUp();
         }
-    }
-}
-
-/**
- * Procesa los efectos de estado activos en el jugador
- */
-function processStatusEffects(scene) {
-    const currentTime = scene.time.now;
-    
-    // Filtrar efectos caducados
-    gameState.playerStats.statusEffects = gameState.playerStats.statusEffects.filter(effect => {
-        // Comprobar si el efecto ha expirado
-        if (effect.expiresAt && effect.expiresAt < currentTime) {
-            // Aplicar efecto de finalización si existe
-            if (effect.onEnd) {
-                effect.onEnd();
-            }
-            
-            // Mensaje
-            addMessage(`El efecto ${effect.name} ha terminado.`);
-            
-            // Actualizar UI
-            updateUI();
-            
-            // Eliminar efecto
-            return false;
-        }
-        
-        // Aplicar efecto por turno si es tiempo
-        if (effect.onTick && (!effect.lastTick || currentTime - effect.lastTick > effect.tickInterval)) {
-            effect.onTick();
-            effect.lastTick = currentTime;
-            
-            // Actualizar UI si el efecto cambia estadísticas
-            if (effect.affectsStats) {
-                updateUI();
-            }
-        }
-        
-        // Mantener efecto
-        return true;
-    });
-}
-
-/**
- * Coloca las escaleras para bajar al siguiente nivel con un diseño mejorado de portal
- */
-function placeStairs(scene) {
-    // Eliminar escaleras anteriores si existen
-    if (gameState.stairs) {
-        gameState.stairs.destroy();
-    }
-    
-    if (gameState.stairsParticles) {
-        gameState.stairsParticles.destroy();
-    }
-    
-    // Colocar escaleras en la última sala
-    if (gameState.rooms.length > 0) {
-        const lastRoom = gameState.rooms[gameState.rooms.length - 1];
-        const stairsX = lastRoom.centerX * CONFIG.tileSize + (CONFIG.tileSize / 2);
-        const stairsY = lastRoom.centerY * CONFIG.tileSize + (CONFIG.tileSize / 2);
-        
-        // Crear gráfico para el portal mejorado
-        const stairsGraphic = scene.add.graphics();
-        
-        // Fondo del portal
-        const portalSize = CONFIG.tileSize * 2;
-        
-        // Círculo exterior (aura)
-        stairsGraphic.fillStyle(0x8e44ad, 0.3); // Púrpura con transparencia
-        stairsGraphic.fillCircle(0, 0, portalSize/2.5);
-        
-        // Círculo principal
-        stairsGraphic.fillStyle(0x5b2c6f, 0.8);
-        stairsGraphic.fillCircle(0, 0, portalSize/3);
-        
-        // Anillo exterior dorado
-        stairsGraphic.lineStyle(3, 0xffd369, 0.8);
-        stairsGraphic.strokeCircle(0, 0, portalSize/2.5);
-        
-        // Anillo interior
-        stairsGraphic.lineStyle(2, 0xe94560, 0.7);
-        stairsGraphic.strokeCircle(0, 0, portalSize/3.5);
-        
-        // Patrón de espiral dentro del portal
-        stairsGraphic.lineStyle(2, 0xffffff, 0.5);
-        
-        const spiralSegments = 16;
-        const maxRadius = portalSize/3.8;
-        
-        for (let i = 0; i <= spiralSegments; i++) {
-            const angle = (i / spiralSegments) * Math.PI * 6;
-            const radius = (i / spiralSegments) * maxRadius;
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-            
-            if (i === 0) {
-                stairsGraphic.beginPath();
-                stairsGraphic.moveTo(x, y);
-            } else {
-                stairsGraphic.lineTo(x, y);
-            }
-        }
-        stairsGraphic.strokePath();
-        
-        // Líneas de energía que salen del centro
-        for (let i = 0; i < 8; i++) {
-            const angle = (Math.PI / 4) * i;
-            stairsGraphic.lineStyle(1, 0xffffff, 0.7);
-            stairsGraphic.beginPath();
-            stairsGraphic.moveTo(0, 0);
-            stairsGraphic.lineTo(
-                Math.cos(angle) * (portalSize/3), 
-                Math.sin(angle) * (portalSize/3)
-            );
-            stairsGraphic.strokePath();
-        }
-        
-        // Generar textura
-        const stairsTextureKey = 'portal_texture';
-        stairsGraphic.generateTexture(stairsTextureKey, portalSize, portalSize);
-        stairsGraphic.destroy();
-        
-        // Crear sprite con físicas
-        gameState.stairs = scene.physics.add.sprite(stairsX, stairsY, stairsTextureKey);
-        gameState.stairs.setScale(0.6);
-        gameState.stairs.setDepth(3);
-        
-        // Añadir animación de rotación
-        scene.tweens.add({
-            targets: gameState.stairs,
-            angle: 360,
-            duration: 10000,
-            repeat: -1,
-            ease: 'Linear'
-        });
-        
-        // Animación de pulso
-        scene.tweens.add({
-            targets: gameState.stairs,
-            scale: { from: 0.5, to: 0.7 },
-            alpha: { from: 0.8, to: 1 },
-            duration: 2000,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-        
-        // Crear partículas para el portal
-        // Partícula para el exterior (estrellas)
-        const starParticleGraphic = scene.add.graphics();
-        starParticleGraphic.fillStyle(0xffd369, 0.8);
-        
-        // Dibujar forma de estrella pequeña
-        const starSize = 4;
-        for (let i = 0; i < 5; i++) {
-            const angle = (Math.PI * 2 / 5) * i - Math.PI/2;
-            const x = Math.cos(angle) * starSize;
-            const y = Math.sin(angle) * starSize;
-            
-            if (i === 0) {
-                starParticleGraphic.beginPath();
-                starParticleGraphic.moveTo(x, y);
-            } else {
-                starParticleGraphic.lineTo(x, y);
-            }
-        }
-        starParticleGraphic.closePath();
-        starParticleGraphic.fillPath();
-        
-        const starParticleKey = 'portal_star_particle';
-        starParticleGraphic.generateTexture(starParticleKey, starSize*2, starSize*2);
-        starParticleGraphic.destroy();
-        
-        // Partícula para el interior (destellos)
-        const glowParticleGraphic = scene.add.graphics();
-        glowParticleGraphic.fillStyle(0xe94560, 0.8);
-        glowParticleGraphic.fillCircle(0, 0, 3);
-        
-        const glowParticleKey = 'portal_glow_particle';
-        glowParticleGraphic.generateTexture(glowParticleKey, 6, 6);
-        glowParticleGraphic.destroy();
-        
-        // Crear sistema de partículas
-        gameState.stairsParticles = scene.add.particles(starParticleKey);
-        
-        // Emisor de estrellas que orbitan
-        const starEmitter = gameState.stairsParticles.createEmitter({
-            x: stairsX,
-            y: stairsY,
-            speed: { min: 40, max: 60 },
-            scale: { start: 0.8, end: 0.2 },
-            angle: { min: 0, max: 360 },
-            lifespan: 2000,
-            blendMode: 'ADD',
-            frequency: 500,
-            quantity: 1,
-            emitZone: {
-                type: 'edge',
-                source: new Phaser.Geom.Circle(0, 0, portalSize/3),
-                quantity: 16,
-                yoyo: false
-            }
-        });
-        
-        // Emisor de destellos interiores
-        const glowEmitter = gameState.stairsParticles.createEmitter({
-            x: stairsX,
-            y: stairsY,
-            speed: { min: 20, max: 30 },
-            scale: { start: 1, end: 0 },
-            alpha: { start: 1, end: 0 },
-            lifespan: 1000,
-            blendMode: 'ADD',
-            frequency: 200,
-            quantity: 2,
-            emitZone: {
-                type: 'random',
-                source: new Phaser.Geom.Circle(0, 0, portalSize/5),
-                quantity: 8
-            }
-        });
-        
-        // Cambiar entre partículas
-        scene.time.addEvent({
-            delay: 300,
-            callback: () => {
-                glowEmitter.setFrame(glowParticleKey);
-            },
-            callbackScope: scene
-        });
     }
 }
 
@@ -651,7 +271,6 @@ function useStairs(player, stairs) {
     // Reproducir sonido
     scene.sounds.stairs();
     
-    // Animación de transición
     scene.tweens.add({
         targets: player,
         alpha: 0,
@@ -662,7 +281,7 @@ function useStairs(player, stairs) {
             gameState.dungeonLevel++;
             
             // Mensaje
-            addMessage(`Descendiendo al nivel ${gameState.dungeonLevel} de la mazmorra...`, "level");
+            addMessage(`Descendiendo al nivel ${gameState.dungeonLevel} de la mazmorra...`);
             
             // Reiniciar escena
             scene.scene.restart();
@@ -671,70 +290,4 @@ function useStairs(player, stairs) {
             gameState.isChangingLevel = false;
         }
     });
-    
-    // Efecto visual
-    scene.cameras.main.flash(800, 15, 52, 96);
-    
-    // Efecto de partículas
-    const particles = scene.add.particles('player_texture');
-    const emitter = particles.createEmitter({
-        scale: { start: 0.4, end: 0 },
-        speed: 50,
-        lifespan: 800,
-        blendMode: 'ADD',
-        frequency: 50
-    });
-    
-    emitter.startFollow(player);
-    
-    // Limpiar partículas
-    scene.time.delayedCall(800, () => {
-        particles.destroy();
-    });
-}
-
-/**
- * Maneja la muerte del jugador
- */
-function playerDeath(scene) {
-    // Crear gráfico para la explosión
-    const explosionGraphic = scene.add.graphics();
-    explosionGraphic.fillStyle(0x3498db, 0.7);
-    explosionGraphic.fillCircle(0, 0, 40);
-    explosionGraphic.fillStyle(0x2980b9, 0.8);
-    explosionGraphic.fillCircle(0, 0, 25);
-    explosionGraphic.fillStyle(0xffffff, 0.9);
-    explosionGraphic.fillCircle(0, 0, 10);
-    
-    // Generar textura para la explosión
-    const explosionTextureKey = 'player_death_texture';
-    if (!scene.textures.exists(explosionTextureKey)) {
-        explosionGraphic.generateTexture(explosionTextureKey, 80, 80);
-    }
-    explosionGraphic.destroy();
-    
-    // Crear el sprite de la explosión
-    const explosion = scene.add.sprite(scene.player.x, scene.player.y, explosionTextureKey);
-    explosion.setScale(0.5);
-    explosion.depth = 15;
-    
-    // Animación de la explosión
-    scene.tweens.add({
-        targets: explosion,
-        scale: 3,
-        alpha: 0,
-        duration: 1000,
-        onComplete: () => {
-            explosion.destroy();
-        }
-    });
-    
-    // Reproducir sonido
-    scene.sounds.playerDeath();
-    
-    // Mensaje
-    addMessage("¡Has muerto! Pulsa el botón para intentarlo de nuevo.", "combat");
-    
-    // Game Over
-    showGameOver();
 }

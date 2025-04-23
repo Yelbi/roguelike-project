@@ -1,20 +1,10 @@
 /**
- * enemyAI.js
- * Funciones para la inteligencia artificial y comportamiento de los enemigos
- */
-
-/**
- * Actualiza la lógica de los enemigos con mejores animaciones
+ * Actualiza la lógica de los enemigos
  */
 function updateEnemies(scene, player) {
     const currentTime = scene.time.now;
     
     for (const enemy of gameState.enemies) {
-        // Actualizar barra de salud
-        if (enemy.healthBar && typeof enemy.healthBar.update === 'function') {
-            enemy.healthBar.update();
-        }
-        
         // Mover enemigo cada cierto tiempo
         if (currentTime - enemy.lastMove > 1000 + getRandomInt(-200, 200)) {
             // Asegurarnos de que el sprite existe
@@ -33,25 +23,16 @@ function updateEnemies(scene, player) {
                     player.x, player.y
                 );
                 
-                // Velocidad basada en nivel y tipo de enemigo
-                const baseSpeed = 40 + (enemy.level * 2);
-                const typeSpeedMultiplier = [1.2, 0.9, 0.7, 1.3, 0.8, 1.1][enemy.type % 6];
-                const speed = baseSpeed * typeSpeedMultiplier;
+                const speed = 40 + (enemy.level * 2);
                 
                 const velocityX = Math.cos(angle) * speed;
                 const velocityY = Math.sin(angle) * speed;
                 
                 enemy.sprite.setVelocity(velocityX, velocityY);
-                
-                // Añadir efecto visual de persecución
-                if (Math.random() > 0.7) {
-                    addMovementEffect(scene, enemy, angle, true);
-                }
             } else {
                 // Movimiento aleatorio
                 const direction = getRandomInt(0, 3);
-                const baseSpeed = 40;
-                const speed = baseSpeed + (enemy.level * 2);
+                const speed = 40 + (enemy.level * 2);
                 
                 switch (direction) {
                     case 0: // Arriba
@@ -67,12 +48,6 @@ function updateEnemies(scene, player) {
                         enemy.sprite.setVelocity(-speed, 0);
                         break;
                 }
-                
-                // Añadir efecto visual de movimiento aleatorio
-                if (Math.random() > 0.8) {
-                    const moveAngle = [Math.PI * 1.5, 0, Math.PI * 0.5, Math.PI][direction];
-                    addMovementEffect(scene, enemy, moveAngle, false);
-                }
             }
             
             // Actualizar tiempo de último movimiento
@@ -84,24 +59,6 @@ function updateEnemies(scene, player) {
                     enemy.sprite.setVelocity(0, 0);
                 }
             });
-            
-            // Añadir animación de movimiento
-            if (!enemy.isMoving) {
-                enemy.isMoving = true;
-                scene.tweens.add({
-                    targets: enemy.sprite,
-                    scaleX: 0.85,
-                    scaleY: 0.85,
-                    duration: 200,
-                    yoyo: true,
-                    repeat: 2,
-                    onComplete: () => {
-                        if (enemy.sprite && enemy.sprite.active) {
-                            enemy.isMoving = false;
-                        }
-                    }
-                });
-            }
         }
         
         // Comprobar colisión con el jugador
@@ -115,60 +72,6 @@ function updateEnemies(scene, player) {
             }
         }
     }
-}
-
-/**
- * Añade efecto visual al movimiento de los enemigos
- */
-function addMovementEffect(scene, enemy, angle, isChasing) {
-    // Si el enemigo no está activo, no hacer nada
-    if (!enemy.sprite || !enemy.sprite.active) return;
-    
-    // Crear efecto según tipo de enemigo
-    let effectColor, effectAlpha;
-    
-    if (isChasing) {
-        // Efecto de persecución - más intenso
-        effectColor = 0xff4d4d;
-        effectAlpha = 0.4;
-    } else {
-        // Efecto normal de movimiento
-        effectColor = [0xe74c3c, 0xc0392b, 0xd35400, 0xe67e22, 0xf39c12, 0x8e44ad][enemy.type % 6];
-        effectAlpha = 0.2;
-    }
-    
-    // Crear gráfico para el efecto
-    const effectGraphic = scene.add.graphics();
-    effectGraphic.fillStyle(effectColor, effectAlpha);
-    
-    // Tamaño basado en el nivel del enemigo
-    const size = CONFIG.tileSize * 0.4 * (1 + (enemy.level * 0.05));
-    
-    // Dibujar una estela detrás del enemigo
-    effectGraphic.fillCircle(0, 0, size);
-    
-    // Generar textura
-    const effectTexture = effectGraphic.generateTexture('movement_effect_' + enemy.type, size * 2, size * 2);
-    effectGraphic.destroy();
-    
-    // Posición donde aparecerá el efecto (ligeramente detrás del enemigo)
-    const offsetDistance = size * 0.8;
-    const effectX = enemy.sprite.x - Math.cos(angle) * offsetDistance;
-    const effectY = enemy.sprite.y - Math.sin(angle) * offsetDistance;
-    
-    // Crear sprite para el efecto
-    const effect = scene.add.sprite(effectX, effectY, 'movement_effect_' + enemy.type);
-    effect.setDepth(3);
-    effect.setAlpha(effectAlpha);
-    
-    // Animación de desvanecimiento
-    scene.tweens.add({
-        targets: effect,
-        alpha: 0,
-        scale: 0.5,
-        duration: 300,
-        onComplete: () => effect.destroy()
-    });
 }
 
 /**
@@ -186,7 +89,7 @@ function checkInteraction(scene, player) {
             enemy.sprite.x, enemy.sprite.y
         );
         
-        if (distance < 50) { // Radio de ataque ligeramente aumentado
+        if (distance < 50) {
             nearbyEnemies.push(enemy);
         }
     }
@@ -207,39 +110,213 @@ function checkInteraction(scene, player) {
         
         // Atacar al enemigo más cercano
         attackEnemy(scene, nearbyEnemies[0]);
-        
-        // Crear línea de ataque desde el jugador al enemigo (efecto visual adicional)
-        const lineGraphic = scene.add.graphics();
-        lineGraphic.lineStyle(2, 0xffffff, 0.5);
-        lineGraphic.beginPath();
-        lineGraphic.moveTo(player.x, player.y);
-        lineGraphic.lineTo(nearbyEnemies[0].sprite.x, nearbyEnemies[0].sprite.y);
-        lineGraphic.strokePath();
-        lineGraphic.setDepth(8);
-        
-        // Animar la línea de ataque
-        scene.tweens.add({
-            targets: lineGraphic,
-            alpha: 0,
-            duration: 150,
-            onComplete: () => {
-                lineGraphic.destroy();
-            }
-        });
-        
         return true;
     }
     
-    // Comprobar interacción con otros elementos
-    // Por ejemplo, interactuar con escaleras o elementos del escenario
     return false;
 }
 
-// Exportar funciones
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        updateEnemies,
-        addMovementEffect,
-        checkInteraction
+/**
+ * Ataca a un enemigo
+ */
+function attackEnemy(scene, enemy) {
+    // Calcular daño basado en estadísticas
+    const baseDamage = gameState.playerStats.attack;
+    const defense = enemy.defense;
+    const damage = Math.max(1, baseDamage - defense);
+    
+    // Probabilidad de golpe crítico
+    const critChance = 0.05 + (gameState.playerStats.level * 0.01);
+    const isCrit = Math.random() < critChance;
+    
+    // Calcular daño final
+    const finalDamage = isCrit ? Math.floor(damage * 1.5) : damage;
+    
+    // Reproducir sonido
+    scene.sounds.hit();
+    
+    // Aplicar daño
+    enemy.health -= finalDamage;
+    
+    // Mensaje
+    if (isCrit) {
+        addMessage(`¡Golpe crítico! Causas ${finalDamage} puntos de daño.`);
+    } else {
+        addMessage(`Atacas al enemigo y causas ${finalDamage} puntos de daño.`);
+    }
+    
+    // Comprobar si el enemigo ha muerto
+    if (enemy.health <= 0) {
+        defeatEnemy(scene, enemy);
+    }
+}
+
+/**
+ * Ataca al jugador desde un enemigo
+ */
+function enemyAttack(scene, enemy, player) {
+    // Calcular daño
+    const baseDamage = enemy.attack;
+    const defense = gameState.playerStats.defense;
+    const damage = Math.max(1, baseDamage - defense);
+    
+    // Reproducir sonido
+    scene.sounds.hit();
+    
+    // Aplicar daño
+    gameState.playerStats.health -= damage;
+    
+    // Mensaje
+    const enemyNameDisplay = enemy.name || "Enemigo";
+    addMessage(`${enemyNameDisplay} te ataca y causa ${damage} puntos de daño.`);
+    
+    // Actualizar UI
+    updateUI();
+    
+    // Comprobar si el jugador ha muerto
+    if (gameState.playerStats.health <= 0) {
+        playerDeath(scene);
+    }
+}
+
+/**
+ * Derrota a un enemigo
+ */
+function defeatEnemy(scene, enemy) {
+    // Reproducir sonido
+    scene.sounds.enemyDeath();
+    
+    // Eliminar enemigo
+    if (enemy.sprite) enemy.sprite.destroy();
+    gameState.enemies = gameState.enemies.filter(e => e !== enemy);
+    
+    // Incrementar contador de enemigos derrotados
+    gameState.enemiesKilled++;
+    
+    // Ganar experiencia
+    gameState.playerStats.xp += enemy.xpReward;
+    
+    // Mensaje
+    addMessage(`Has derrotado al ${enemy.name} nivel ${enemy.level} y ganas ${enemy.xpReward} puntos de experiencia.`);
+    
+    // Comprobar subida de nivel
+    checkLevelUp();
+    
+    // Actualizar UI
+    updateUI();
+    
+    // Posibilidad de soltar objeto
+    const dropChance = 30 + (enemy.level * 3);
+    if (getRandomInt(1, 100) <= dropChance) {
+        dropItem(scene, enemy.sprite.x, enemy.sprite.y);
+    }
+}
+
+/**
+ * Coloca enemigos en las salas
+ */
+function placeEnemies(scene) {
+    gameState.enemies = [];
+    
+    // Destruir grupo anterior si existe
+    if (gameState.enemiesGroup) {
+        gameState.enemiesGroup.clear(true, true);
+    }
+    
+    // Crear nuevo grupo de enemigos
+    gameState.enemiesGroup = scene.physics.add.group();
+    
+    // Tipos de enemigos disponibles
+    const enemyTypes = [
+        { name: 'Sombra', color: 0xe74c3c },
+        { name: 'Centinela', color: 0xc0392b },
+        { name: 'Brujo', color: 0xd35400 },
+        { name: 'Asesino', color: 0xe67e22 },
+        { name: 'Guardián', color: 0xf39c12 },
+        { name: 'Espectro', color: 0x8e44ad }
+    ];
+    
+    // Colocar enemigos en salas aleatorias (excepto la primera)
+    for (let i = 1; i < gameState.rooms.length; i++) {
+        const room = gameState.rooms[i];
+        
+        // Más enemigos en niveles más profundos
+        const minEnemies = Math.min(1, Math.floor(gameState.dungeonLevel / 2));
+        const maxEnemies = Math.min(5, Math.floor(gameState.dungeonLevel * 0.7) + 1);
+        const enemyCount = getRandomInt(minEnemies, maxEnemies);
+        
+        for (let j = 0; j < enemyCount; j++) {
+            // Encontrar una posición válida
+            const x = getRandomInt(room.x + 1, room.x + room.width - 2);
+            const y = getRandomInt(room.y + 1, room.y + room.height - 2);
+            
+            // Elegir tipo de enemigo basado en nivel de mazmorra
+            const availableTypes = Math.min(enemyTypes.length, gameState.dungeonLevel + 1);
+            const enemyTypeIndex = getRandomInt(0, availableTypes - 1);
+            const enemyType = enemyTypes[enemyTypeIndex];
+            
+            // Nivel del enemigo
+            const enemyLevel = getRandomInt(
+                Math.max(1, gameState.dungeonLevel - 1),
+                gameState.dungeonLevel + 1
+            );
+            
+            // Posición en píxeles
+            const enemyX = x * CONFIG.tileSize + (CONFIG.tileSize / 2);
+            const enemyY = y * CONFIG.tileSize + (CONFIG.tileSize / 2);
+            
+            // Crear enemigo
+            createEnemy(scene, enemyX, enemyY, enemyType, enemyTypeIndex, enemyLevel);
+        }
+    }
+    
+    // Configurar colisiones
+    scene.physics.add.collider(gameState.enemiesGroup, gameState.wallsLayer);
+    scene.physics.add.collider(gameState.enemiesGroup, gameState.enemiesGroup);
+}
+
+/**
+ * Crea un enemigo
+ */
+function createEnemy(scene, x, y, enemyType, typeIndex, level) {
+    // Crear gráfico para el enemigo
+    const enemyGraphic = scene.add.graphics({ willReadFrequently: true });
+    enemyGraphic.fillStyle(enemyType.color, 1);
+    enemyGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.4);
+    // Añadir borde negro para mejor visibilidad
+    enemyGraphic.lineStyle(2, 0x000000, 1);
+    enemyGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.4);
+    
+    // Generar textura
+    const enemyTextureKey = `enemy_${typeIndex}_lvl_${level}_texture`;
+    enemyGraphic.generateTexture(enemyTextureKey, CONFIG.tileSize, CONFIG.tileSize);
+    enemyGraphic.destroy();
+    
+    // Crear sprite
+    const enemy = scene.physics.add.sprite(x, y, enemyTextureKey);
+    enemy.setDepth(5);
+    
+    // Agregar al grupo de físicas
+    gameState.enemiesGroup.add(enemy);
+    
+    // Estadísticas
+    const enemyBaseHealth = 30 + (level * 12);
+    
+    const enemyData = {
+        sprite: enemy,
+        type: typeIndex,
+        name: enemyType.name,
+        level: level,
+        health: enemyBaseHealth,
+        maxHealth: enemyBaseHealth,
+        attack: 5 + (level * 3) + typeIndex,
+        defense: 2 + Math.floor(level / 2) + Math.floor(typeIndex / 2),
+        xpReward: 25 + (level * 15) + (typeIndex * 5),
+        lastMove: 0,
+        lastAttack: 0
     };
+    
+    gameState.enemies.push(enemyData);
+    
+    return enemyData;
 }

@@ -1,9 +1,5 @@
 /**
- * Funciones relacionadas con el jugador
- */
-
-/**
- * Crea y configura al jugador con un diseño visual mejorado
+ * Crea y configura al jugador
  */
 function createPlayer(scene) {
     // Encontrar una posición segura para el jugador
@@ -20,159 +16,28 @@ function createPlayer(scene) {
         playerY = (CONFIG.mapHeight / 2) * CONFIG.tileSize;
     }
     
-    console.log(`Jugador colocado en: X=${playerX}, Y=${playerY}`);
-    
-    // Crear gráfico personalizado para el jugador con diseño de caballero/aventurero
-    const playerGraphic = scene.add.graphics();
-    
-    // Cuerpo principal (base circular)
-    playerGraphic.fillStyle(0x3498db, 1); // Azul para el cuerpo
+    // Crear gráfico para el jugador
+    const playerGraphic = scene.add.graphics({ willReadFrequently: true });
+    playerGraphic.fillStyle(0x3498db, 1); // Azul
     playerGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.4);
+    playerGraphic.fillStyle(0xffffff, 0.5); // Borde blanco para mejor visibilidad
+    playerGraphic.lineStyle(2, 0xffffff, 1);
+    playerGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.4);
     
-    // Armadura (parte central)
-    playerGraphic.fillStyle(0x2980b9, 1); // Azul más oscuro para la armadura
-    playerGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.3);
-    
-    // Pechera con detalles
-    playerGraphic.fillStyle(0xf39c12, 0.9); // Dorado para detalles de la armadura
-    playerGraphic.beginPath();
-    playerGraphic.arc(0, 0, CONFIG.tileSize * 0.3, Math.PI * 0.25, Math.PI * 0.75, false);
-    playerGraphic.fill();
-    
-    // Cabeza
-    playerGraphic.fillStyle(0xecf0f1, 1); // Blanco para la cara/casco
-    playerGraphic.fillCircle(0, -CONFIG.tileSize * 0.1, CONFIG.tileSize * 0.15);
-    
-    // Detalles del casco
-    playerGraphic.fillStyle(0xf39c12, 1); // Dorado para el casco
-    playerGraphic.fillRect(-CONFIG.tileSize * 0.15, -CONFIG.tileSize * 0.2, CONFIG.tileSize * 0.3, CONFIG.tileSize * 0.06);
-    
-    // Espada (al costado)
-    playerGraphic.fillStyle(0x7f8c8d, 1); // Gris para la espada
-    playerGraphic.fillRect(CONFIG.tileSize * 0.25, -CONFIG.tileSize * 0.15, CONFIG.tileSize * 0.08, CONFIG.tileSize * 0.3);
-    
-    // Empuñadura de la espada
-    playerGraphic.fillStyle(0x834d18, 1); // Marrón para empuñadura
-    playerGraphic.fillRect(CONFIG.tileSize * 0.25, CONFIG.tileSize * 0.2, CONFIG.tileSize * 0.08, CONFIG.tileSize * 0.1);
-    
-    // Borde de la espada (detalle)
-    playerGraphic.lineStyle(1, 0xecf0f1, 1);
-    playerGraphic.beginPath();
-    playerGraphic.moveTo(CONFIG.tileSize * 0.25, -CONFIG.tileSize * 0.15);
-    playerGraphic.lineTo(CONFIG.tileSize * 0.33, -CONFIG.tileSize * 0.15);
-    playerGraphic.stroke();
-    
-    // Brillo exterior / aura del héroe
-    playerGraphic.lineStyle(2, 0xf1c40f, 0.8);
-    playerGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.42);
-    
-    // Crear textura para el jugador
+    // Crear textura
     const playerTexture = playerGraphic.generateTexture('player_texture', CONFIG.tileSize, CONFIG.tileSize);
     playerGraphic.destroy();
     
-    // Crear sprite del jugador con físicas
+    // Crear sprite con físicas
     const player = scene.physics.add.sprite(playerX, playerY, 'player_texture');
-    
-    // Configurar el jugador
-    player.setScale(0.8);
-    player.setDepth(20); // Asegurar que esté por encima de todo
+    player.setDepth(20);
     player.setCollideWorldBounds(true);
-    
-    // Hacer el cuerpo físico del jugador un poco más pequeño que su sprite visual
-    player.body.setSize(CONFIG.tileSize * 0.6, CONFIG.tileSize * 0.6);
-    player.body.setOffset(CONFIG.tileSize * 0.2, CONFIG.tileSize * 0.2);
     
     // Configurar la cámara para seguir al jugador
     scene.cameras.main.setBounds(0, 0, 
         CONFIG.mapWidth * CONFIG.tileSize, 
         CONFIG.mapHeight * CONFIG.tileSize);
-    scene.cameras.main.startFollow(player, true, 0.08, 0.08); // Suavizado mejorado
-    
-    // Ajustar el zoom para ver más del mapa (menor zoom = ver más)
-    scene.cameras.main.setZoom(0.8);
-    
-    // Agregar efecto de "luz" alrededor del jugador
-    const lightRadius = CONFIG.tileSize * 6; // Radio ampliado
-    const gradient = scene.add.graphics();
-    
-    // Crear un gradiente radial para la luz
-    gradient.clear();
-    
-    // Capas de gradiente
-    gradient.fillStyle(0xf39c12, 0.1); // Amarillo exterior muy tenue
-    gradient.fillCircle(0, 0, lightRadius);
-    
-    gradient.fillStyle(0xf39c12, 0.2); // Amarillo medio
-    gradient.fillCircle(0, 0, lightRadius * 0.7);
-    
-    gradient.fillStyle(0xf1c40f, 0.3); // Amarillo interior más intenso
-    gradient.fillCircle(0, 0, lightRadius * 0.4);
-    
-    // Generar textura de luz
-    const lightTexture = gradient.generateTexture('player_light', lightRadius * 2, lightRadius * 2);
-    gradient.destroy();
-    
-    // Crear sprite de luz
-    const light = scene.add.sprite(playerX, playerY, 'player_light');
-    light.setDepth(3);
-    light.setAlpha(0.7);
-    
-    // Añadir partículas para el jugador (estelas al moverse)
-    const particleGraphic = scene.add.graphics();
-    particleGraphic.fillStyle(0x3498db, 0.7);
-    particleGraphic.fillCircle(0, 0, 5);
-    particleGraphic.generateTexture('player_particle', 10, 10);
-    particleGraphic.destroy();
-    
-    const particles = scene.add.particles('player_particle');
-    
-    // Configurar emisor de partículas
-    const emitter = particles.createEmitter({
-        alpha: { start: 0.7, end: 0 },
-        scale: { start: 0.7, end: 0.1 },
-        speed: 20,
-        lifespan: 800,
-        blendMode: 'ADD',
-        frequency: 110,
-        quantity: 1
-    });
-    
-    // Ocultar emisor inicialmente
-    emitter.stop();
-    
-    // Guardar referencia al emisor en el jugador
-    player.particleEmitter = emitter;
-    
-    // Hacer que la luz siga al jugador
-    scene.tweens.add({
-        targets: light,
-        alpha: { from: 0.5, to: 0.8 },
-        duration: 1500,
-        yoyo: true,
-        repeat: -1
-    });
-    
-    // Actualizar posición de la luz cuando el jugador se mueve
-    player.light = light;
-    player.particles = particles;
-    
-    // Añadir un efecto de aparición
-    player.setAlpha(0);
-    scene.tweens.add({
-        targets: player,
-        alpha: 1,
-        scale: 1,
-        duration: 800,
-        ease: 'Back.out'
-    });
-    
-    // Añadir un tween de rotación lenta para el brillo
-    scene.tweens.add({
-        targets: light,
-        angle: 360,
-        duration: 15000,
-        repeat: -1
-    });
+    scene.cameras.main.startFollow(player, true, 0.08, 0.08);
     
     return player;
 }
@@ -181,211 +46,42 @@ function createPlayer(scene) {
  * Maneja el movimiento del jugador
  */
 function handlePlayerMovement(scene, player, cursors, wasd) {
-    // Si el juego está pausado, no hacer nada
     if (gameState.isPaused) return;
     
-    const speed = 160; // Velocidad ligeramente aumentada
-    let moving = false;
+    const speed = 160;
     player.setVelocity(0);
     
     // Movimiento horizontal
     if (cursors.left.isDown || wasd.left.isDown) {
         player.setVelocityX(-speed);
-        moving = true;
     } else if (cursors.right.isDown || wasd.right.isDown) {
         player.setVelocityX(speed);
-        moving = true;
     }
     
     // Movimiento vertical
     if (cursors.up.isDown || wasd.up.isDown) {
         player.setVelocityY(-speed);
-        moving = true;
     } else if (cursors.down.isDown || wasd.down.isDown) {
         player.setVelocityY(speed);
-        moving = true;
     }
     
     // Normalizar la velocidad diagonal
     if ((cursors.left.isDown || wasd.left.isDown || cursors.right.isDown || wasd.right.isDown) &&
         (cursors.up.isDown || wasd.up.isDown || cursors.down.isDown || wasd.down.isDown)) {
-        // Reducir la velocidad diagonal
         player.body.velocity.normalize().scale(speed);
-    }
-
-    // Actualizar la posición de la luz para que siga al jugador
-    if (player.light) {
-        player.light.x = player.x;
-        player.light.y = player.y;
-    }
-    
-    // Gestionar las partículas según movimiento
-    if (player.particleEmitter) {
-        if (moving) {
-            // Activar emisor de partículas
-            player.particleEmitter.start();
-            // Ajustar posición del emisor para que siga al jugador
-            player.particleEmitter.setPosition(player.x, player.y);
-            // La dirección de emisión depende de la dirección de movimiento (opuesta)
-            const angle = Phaser.Math.RadToDeg(
-                Math.atan2(-player.body.velocity.y, -player.body.velocity.x)
-            );
-            player.particleEmitter.setAngle({ min: angle - 20, max: angle + 20 });
-        } else {
-            // Detener emisión de partículas cuando no se mueve
-            player.particleEmitter.stop();
-        }
-    }
-    
-    // Agregar animación mejorada de movimiento
-    if (moving) {
-        if (!player.isMoving) {
-            player.isMoving = true;
-            
-            // Detener cualquier tween anterior
-            scene.tweens.killTweensOf(player);
-            
-            // Animación de "vibración" ligera para dar sensación de movimiento
-            scene.tweens.add({
-                targets: player,
-                scaleX: { from: 0.85, to: 0.95 },
-                scaleY: { from: 0.95, to: 0.85 },
-                duration: 350,
-                ease: 'Sine.easeInOut',
-                yoyo: true,
-                repeat: -1
-            });
-        }
-    } else if (player.isMoving) {
-        player.isMoving = false;
-        scene.tweens.killTweensOf(player);
-        
-        // Animación de "respiración" en reposo
-        scene.tweens.add({
-            targets: player,
-            scaleX: 0.9,
-            scaleY: 0.9,
-            duration: 750,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
     }
 }
 
 /**
- * Muerte del jugador con efectos visuales mejorados
+ * Muerte del jugador
  */
 function playerDeath(scene) {
-    // Detener al jugador y eliminar cualquier tween en progreso
-    scene.player.body.setVelocity(0, 0);
-    scene.tweens.killTweensOf(scene.player);
-    
-    // Detener emisor de partículas
-    if (scene.player.particleEmitter) {
-        scene.player.particleEmitter.stop();
-    }
-    
-    // Crear varios círculos de explosión
-    const explosionColors = [
-        0xe94560, // Rojo
-        0xffd369, // Amarillo
-        0x0f3460, // Azul oscuro
-        0xffffff  // Blanco
-    ];
-    
-    // Animación de muerte más elaborada
-    scene.time.delayedCall(100, () => {
-        // Crear partículas de explosión
-        const deathParticles = scene.add.particles('player_texture');
-        const deathEmitter = deathParticles.createEmitter({
-            speed: { min: 50, max: 200 },
-            angle: { min: 0, max: 360 },
-            scale: { start: 0.6, end: 0 },
-            blendMode: 'ADD',
-            lifespan: 800,
-            quantity: 30
-        });
-        
-        deathEmitter.explode(50, scene.player.x, scene.player.y);
-        
-        // Secuencia de efectos visuales
-        for (let i = 0; i < explosionColors.length; i++) {
-            const color = explosionColors[i];
-            const delay = i * 150;
-            
-            // Gráfico para el círculo de explosión
-            const explosionGraphic = scene.add.graphics();
-            explosionGraphic.fillStyle(color, 1);
-            explosionGraphic.fillCircle(0, 0, 40 - i * 8);
-            
-            // Generar textura
-            const explosionTextureKey = `explosion_texture_${i}`;
-            explosionGraphic.generateTexture(explosionTextureKey, 80, 80);
-            explosionGraphic.destroy();
-            
-            // Crear sprite con retraso
-            scene.time.delayedCall(delay, () => {
-                const explosion = scene.add.sprite(scene.player.x, scene.player.y, explosionTextureKey);
-                explosion.setScale(0.5);
-                explosion.setDepth(25);
-                
-                // Añadir tween
-                scene.tweens.add({
-                    targets: explosion,
-                    scale: 3,
-                    alpha: 0,
-                    duration: 500,
-                    ease: 'Power2',
-                    onComplete: () => {
-                        explosion.destroy();
-                    }
-                });
-            });
-        }
-        
-        // Añadir ondas de energía
-        const shockwave = scene.add.graphics();
-        shockwave.lineStyle(3, 0xe94560, 1);
-        shockwave.strokeCircle(0, 0, 30);
-        
-        const shockwaveTexture = shockwave.generateTexture('shockwave_texture', 60, 60);
-        shockwave.destroy();
-        
-        const shockwaveSprite = scene.add.sprite(scene.player.x, scene.player.y, 'shockwave_texture');
-        shockwaveSprite.setDepth(20);
-        
-        scene.tweens.add({
-            targets: shockwaveSprite,
-            scale: 8,
-            alpha: 0,
-            duration: 1000,
-            ease: 'Cubic.Out'
-        });
-    });
-    
-    // Ocultar al jugador con una animación de desvanecimiento
-    scene.tweens.add({
-        targets: scene.player,
-        alpha: 0,
-        scale: 1.5,
-        angle: 720,
-        duration: 800,
-        ease: 'Power2'
-    });
-    
-    // Sacudir la cámara para dar efecto dramático
-    scene.cameras.main.shake(500, 0.03);
-    scene.cameras.main.flash(500, 230, 69, 96);
-    
-    // Reproducir sonido (si existe)
+    // Reproducir sonido
     scene.sounds.playerDeath();
     
     // Mensaje
-    addMessage("¡Has muerto! Pulsa el botón para intentarlo de nuevo.", "combat");
+    addMessage("¡Has muerto! Pulsa el botón para intentarlo de nuevo.");
     
-    // Esperar un momento antes de mostrar la pantalla de Game Over
-    scene.time.delayedCall(1200, () => {
-        showGameOver();
-    });
+    // Mostrar pantalla de Game Over
+    showGameOver();
 }

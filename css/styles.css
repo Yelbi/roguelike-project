@@ -1,35 +1,11 @@
-/* Estilos mejorados para Mazmorra Infinita */
-
-/* Variables de colores para una paleta coherente */
-:root {
-    --primary-dark: #1a1a2e;
-    --secondary-dark: #16213e;
-    --tertiary-dark: #0f3460;
-    --accent-color: #e94560;
-    --accent-glow: #ff6b85;
-    --text-color: #f5f5f5;
-    --highlight-color: #ffd369;
-    --health-bar: #e94560;
-    --xp-bar: #4f8a8b;
-    --wall-color: #2d4059;
-    --floor-color: #222831;
-    --potion-health: #9bdc28;
-    --potion-attack: #e94560;
-    --potion-defense: #4285f4;
-    --potion-exp: #9c42f4;
-    --potion-maxhealth: #42cef4;
-    --potion-mystery: #f4a742;
-}
+/* Estilos esenciales para Mazmorra Infinita */
 
 /* Estilos generales */
 body {
     margin: 0;
     padding: 0;
-    background-color: var(--primary-dark);
-    background-image: 
-        radial-gradient(circle at 25% 25%, rgba(50, 50, 100, 0.2) 0%, transparent 80%),
-        radial-gradient(circle at 75% 75%, rgba(100, 50, 50, 0.2) 0%, transparent 80%);
-    color: var(--text-color);
+    background-color: #1a1a2e;
+    color: #f5f5f5;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     flex-direction: column;
@@ -42,10 +18,9 @@ body {
 #game-container {
     width: 800px;
     height: 600px;
-    border: 2px solid var(--accent-color);
+    border: 2px solid #e94560;
     border-radius: 5px;
-    background-color: var(--secondary-dark);
-    box-shadow: 0 0 20px rgba(233, 69, 96, 0.5), inset 0 0 30px rgba(15, 52, 96, 0.5);
+    background-color: #16213e;
     position: relative;
     overflow: hidden;
 }
@@ -54,11 +29,8 @@ body {
 .title {
     font-size: 2.5rem;
     margin: 20px 0;
-    color: var(--highlight-color);
-    text-shadow: 0 0 10px var(--highlight-color), 0 0 20px rgba(255, 211, 105, 0.5);
+    color: #ffd369;
     font-weight: bold;
-    letter-spacing: 3px;
-    text-transform: uppercase;
 }
 
 /* Contenedor de la interfaz del jugador */
@@ -67,18 +39,11 @@ body {
     top: 10px;
     left: 10px;
     z-index: 10;
-    background: linear-gradient(135deg, rgba(15, 52, 96, 0.9), rgba(22, 33, 62, 0.9));
-    border: 1px solid var(--accent-color);
+    background: rgba(15, 52, 96, 0.9);
+    border: 1px solid #e94560;
     border-radius: 8px;
     padding: 12px;
     min-width: 180px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
-}
-
-/* Estadísticas del jugador */
-#player-stats {
-    font-size: 14px;
 }
 
 /* Barras de salud y experiencia */
@@ -93,19 +58,17 @@ body {
 }
 
 .health-bar .fill {
-    background: linear-gradient(to right, #ff4757, #e94560);
+    background: #e94560;
     height: 100%;
     border-radius: 5px;
     transition: width 0.3s;
-    box-shadow: 0 0 5px var(--health-bar);
 }
 
 .xp-bar .fill {
-    background: linear-gradient(to right, #5fbaca, #4f8a8b);
+    background: #4f8a8b;
     height: 100%;
     border-radius: 5px;
     transition: width 0.3s;
-    box-shadow: 0 0 5px var(--xp-bar);
 }
 
 /* Estilo de estadísticas */
@@ -116,11 +79,6 @@ body {
     font-size: 14px;
 }
 
-.stat span:first-child {
-    color: var(--highlight-color);
-    font-weight: bold;
-}
-
 /* Registro de mensajes */
 #message-log {
     position: absolute;
@@ -129,68 +87,12 @@ body {
     width: 60%;
     max-height: 150px;
     overflow-y: auto;
-    background: linear-gradient(to bottom, rgba(15, 52, 96, 0.9), rgba(26, 26, 46, 0.9));
-    border: 1px solid var(--accent-color);
+    background: rgba(15, 52, 96, 0.9);
+    border: 1px solid #e94560;
     border-radius: 8px;
     padding: 12px;
     z-index: 10;
     font-size: 14px;
-    line-height: 1.4;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
-    scrollbar-width: thin;
-    scrollbar-color: var(--accent-color) var(--tertiary-dark);
-}
-
-#message-log::-webkit-scrollbar {
-    width: 6px;
-}
-
-#message-log::-webkit-scrollbar-track {
-    background: var(--tertiary-dark);
-}
-
-#message-log::-webkit-scrollbar-thumb {
-    background-color: var(--accent-color);
-    border-radius: 3px;
-}
-
-/* Mensajes de log personalizados */
-.log-message {
-    margin: 3px 0;
-    padding: 2px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.log-message.combat {
-    color: var(--accent-color);
-}
-
-.log-message.item {
-    color: var(--potion-health);
-}
-
-.log-message.level {
-    color: var(--xp-bar);
-}
-
-/* Efectos de estado */
-#status-effects {
-    display: flex;
-    margin-top: 8px;
-    gap: 6px;
-}
-
-.status-effect {
-    width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    box-shadow: 0 0 6px currentColor;
-    transition: transform 0.2s;
-}
-
-.status-effect:hover {
-    transform: scale(1.2);
 }
 
 /* Inventario */
@@ -199,26 +101,14 @@ body {
     top: 10px;
     right: 10px;
     width: 200px;
-    background: linear-gradient(135deg, rgba(15, 52, 96, 0.9), rgba(22, 33, 62, 0.9));
-    border: 1px solid var(--accent-color);
+    background: rgba(15, 52, 96, 0.9);
+    border: 1px solid #e94560;
     border-radius: 8px;
     padding: 12px;
     z-index: 10;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
     max-height: 300px;
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--accent-color) var(--tertiary-dark);
-}
-
-#inventory h3 {
-    margin-top: 0;
-    color: var(--highlight-color);
-    text-align: center;
-    margin-bottom: 12px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--accent-color);
+    display: none;
 }
 
 .inventory-item {
@@ -229,19 +119,10 @@ body {
     cursor: pointer;
     background-color: rgba(0, 0, 0, 0.2);
     border-radius: 4px;
-    transition: all 0.2s;
 }
 
 .inventory-item:hover {
     background-color: rgba(233, 69, 96, 0.3);
-    transform: translateX(3px);
-}
-
-.inventory-item img {
-    width: 28px;
-    height: 28px;
-    margin-right: 8px;
-    filter: drop-shadow(0 0 2px currentColor);
 }
 
 /* Controles */
@@ -249,23 +130,12 @@ body {
     position: absolute;
     bottom: 10px;
     right: 10px;
-    background: linear-gradient(135deg, rgba(15, 52, 96, 0.9), rgba(22, 33, 62, 0.9));
-    border: 1px solid var(--accent-color);
+    background: rgba(15, 52, 96, 0.9);
+    border: 1px solid #e94560;
     border-radius: 8px;
     padding: 12px;
     z-index: 10;
     font-size: 12px;
-    line-height: 1.5;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
-}
-
-.controls div {
-    margin: 4px 0;
-}
-
-.controls div strong {
-    color: var(--highlight-color);
 }
 
 /* Pantalla de carga */
@@ -275,19 +145,12 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, var(--tertiary-dark), var(--primary-dark));
+    background: #16213e;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 100;
-}
-
-#loading h2 {
-    color: var(--highlight-color);
-    font-size: 24px;
-    margin-bottom: 30px;
-    text-shadow: 0 0 10px rgba(255, 211, 105, 0.5);
 }
 
 #loading-bar {
@@ -297,16 +160,13 @@ body {
     border-radius: 10px;
     margin-top: 20px;
     overflow: hidden;
-    border: 1px solid var(--accent-color);
-    position: relative;
+    border: 1px solid #e94560;
 }
 
 #loading-fill {
     height: 100%;
-    background: linear-gradient(to right, var(--accent-color), var(--accent-glow));
+    background: #e94560;
     width: 0%;
-    transition: width 0.3s;
-    box-shadow: 0 0 10px var(--accent-color);
 }
 
 /* Menús y Modales */
@@ -315,63 +175,33 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(15, 52, 96, 0.95));
-    border: 2px solid var(--accent-color);
+    background: rgba(26, 26, 46, 0.95);
+    border: 2px solid #e94560;
     border-radius: 10px;
     padding: 24px;
     width: 400px;
     z-index: 50;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(233, 69, 96, 0.5);
-    backdrop-filter: blur(5px);
+    display: none;
 }
 
 .menu h2, .modal h2 {
     text-align: center;
-    color: var(--highlight-color);
+    color: #ffd369;
     margin-top: 0;
-    font-size: 26px;
-    text-shadow: 0 0 10px rgba(255, 211, 105, 0.5);
     margin-bottom: 20px;
 }
 
 .menu-option {
-    background: linear-gradient(to right, rgba(22, 33, 62, 0.8), rgba(15, 52, 96, 0.8));
+    background: rgba(22, 33, 62, 0.8);
     padding: 12px;
     margin: 15px 0;
     border-radius: 5px;
     cursor: pointer;
     text-align: center;
-    transition: all 0.3s;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    position: relative;
-    overflow: hidden;
 }
 
 .menu-option:hover {
-    background: linear-gradient(to right, rgba(233, 69, 96, 0.4), rgba(22, 33, 62, 0.8));
-    transform: translateY(-2px);
-    border-color: var(--accent-color);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.menu-option:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.1),
-        transparent
-    );
-    transition: left 0.7s;
-}
-
-.menu-option:hover:before {
-    left: 100%;
+    background: rgba(233, 69, 96, 0.4);
 }
 
 .modal-buttons {
@@ -381,120 +211,13 @@ body {
 }
 
 .modal-button {
-    background: linear-gradient(to bottom, rgba(15, 52, 96, 0.8), rgba(26, 26, 46, 0.8));
+    background: rgba(15, 52, 96, 0.8);
     padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
-    transition: all 0.2s;
-    min-width: 120px;
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .modal-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.modal-button.confirm {
-    background: linear-gradient(to bottom, rgba(39, 174, 96, 0.8), rgba(46, 139, 87, 0.8));
-    color: white;
-    border-color: rgba(39, 174, 96, 0.4);
-}
-
-.modal-button.confirm:hover {
-    background: linear-gradient(to bottom, rgba(46, 204, 113, 0.8), rgba(39, 174, 96, 0.8));
-}
-
-.modal-button.cancel {
-    background: linear-gradient(to bottom, rgba(192, 57, 43, 0.8), rgba(169, 50, 38, 0.8));
-    color: white;
-    border-color: rgba(192, 57, 43, 0.4);
-}
-
-.modal-button.cancel:hover {
-    background: linear-gradient(to bottom, rgba(231, 76, 60, 0.8), rgba(192, 57, 43, 0.8));
-}
-
-/* Animaciones */
-@keyframes pulse {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.05); }
-    100% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes glow {
-    0% { box-shadow: 0 0 5px var(--accent-color); }
-    50% { box-shadow: 0 0 15px var(--accent-color), 0 0 5px var(--accent-glow); }
-    100% { box-shadow: 0 0 5px var(--accent-color); }
-}
-
-/* Añadir animaciones a elementos */
-.title {
-    animation: pulse 3s infinite;
-}
-
-#game-container {
-    animation: glow 5s infinite;
-}
-
-/* Ayuda con lista mejorada */
-#help-modal ul {
-    padding-left: 20px;
-    margin: 10px 0;
-}
-
-#help-modal li {
-    margin-bottom: 8px;
-    list-style-type: none;
-    position: relative;
-    padding-left: 20px;
-}
-
-#help-modal li:before {
-    content: "●";
-    color: var(--accent-color);
-    position: absolute;
-    left: 0;
-}
-
-#help-modal p {
-    margin: 15px 0;
-}
-
-#help-modal strong {
-    color: var(--highlight-color);
-}
-
-/* Game Over pantalla */
-#game-over p {
-    text-align: center;
-    font-size: 18px;
-    margin: 10px 0;
-}
-
-#game-over span {
-    color: var(--highlight-color);
-    font-weight: bold;
-    font-size: 22px;
-}
-
-/* Efectos para el hover en elementos interactivos */
-.inventory-item, .menu-option, .modal-button {
-    position: relative;
-    z-index: 1;
-}
-
-/* Efecto de ruido para el fondo */
-body:after {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.02;
-    z-index: -1;
-    pointer-events: none;
+    background: rgba(233, 69, 96, 0.4);
 }
