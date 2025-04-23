@@ -3,7 +3,7 @@
  */
 
 /**
- * Crea y configura al jugador
+ * Crea y configura al jugador con un diseño visual mejorado
  */
 function createPlayer(scene) {
     // Encontrar una posición segura para el jugador
@@ -22,23 +22,48 @@ function createPlayer(scene) {
     
     console.log(`Jugador colocado en: X=${playerX}, Y=${playerY}`);
     
-    // Crear gráfico personalizado para el jugador con un diseño mejorado
+    // Crear gráfico personalizado para el jugador con diseño de caballero/aventurero
     const playerGraphic = scene.add.graphics();
     
-    // Base del personaje (círculo)
-    playerGraphic.fillStyle(0xe94560, 1); // Color primario
+    // Cuerpo principal (base circular)
+    playerGraphic.fillStyle(0x3498db, 1); // Azul para el cuerpo
     playerGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.4);
     
-    // Detalles del personaje
-    playerGraphic.fillStyle(0xffd369, 1); // Color de detalle
-    playerGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.25);
+    // Armadura (parte central)
+    playerGraphic.fillStyle(0x2980b9, 1); // Azul más oscuro para la armadura
+    playerGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.3);
     
-    // Detalles interiores
-    playerGraphic.fillStyle(0x0f3460, 1); // Color oscuro para detalles
-    playerGraphic.fillCircle(0, 0, CONFIG.tileSize * 0.15);
+    // Pechera con detalles
+    playerGraphic.fillStyle(0xf39c12, 0.9); // Dorado para detalles de la armadura
+    playerGraphic.beginPath();
+    playerGraphic.arc(0, 0, CONFIG.tileSize * 0.3, Math.PI * 0.25, Math.PI * 0.75, false);
+    playerGraphic.fill();
     
-    // Añadir brillo exterior
-    playerGraphic.lineStyle(3, 0xff6b85, 1);
+    // Cabeza
+    playerGraphic.fillStyle(0xecf0f1, 1); // Blanco para la cara/casco
+    playerGraphic.fillCircle(0, -CONFIG.tileSize * 0.1, CONFIG.tileSize * 0.15);
+    
+    // Detalles del casco
+    playerGraphic.fillStyle(0xf39c12, 1); // Dorado para el casco
+    playerGraphic.fillRect(-CONFIG.tileSize * 0.15, -CONFIG.tileSize * 0.2, CONFIG.tileSize * 0.3, CONFIG.tileSize * 0.06);
+    
+    // Espada (al costado)
+    playerGraphic.fillStyle(0x7f8c8d, 1); // Gris para la espada
+    playerGraphic.fillRect(CONFIG.tileSize * 0.25, -CONFIG.tileSize * 0.15, CONFIG.tileSize * 0.08, CONFIG.tileSize * 0.3);
+    
+    // Empuñadura de la espada
+    playerGraphic.fillStyle(0x834d18, 1); // Marrón para empuñadura
+    playerGraphic.fillRect(CONFIG.tileSize * 0.25, CONFIG.tileSize * 0.2, CONFIG.tileSize * 0.08, CONFIG.tileSize * 0.1);
+    
+    // Borde de la espada (detalle)
+    playerGraphic.lineStyle(1, 0xecf0f1, 1);
+    playerGraphic.beginPath();
+    playerGraphic.moveTo(CONFIG.tileSize * 0.25, -CONFIG.tileSize * 0.15);
+    playerGraphic.lineTo(CONFIG.tileSize * 0.33, -CONFIG.tileSize * 0.15);
+    playerGraphic.stroke();
+    
+    // Brillo exterior / aura del héroe
+    playerGraphic.lineStyle(2, 0xf1c40f, 0.8);
     playerGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.42);
     
     // Crear textura para el jugador
@@ -71,19 +96,17 @@ function createPlayer(scene) {
     const gradient = scene.add.graphics();
     
     // Crear un gradiente radial para la luz
-    const gradientColors = [
-        { stop: 0, color: 0xe94560, alpha: 0.3 },
-        { stop: 0.5, color: 0xe94560, alpha: 0.1 },
-        { stop: 1, color: 0xe94560, alpha: 0 }
-    ];
-    
     gradient.clear();
-    let i = 0;
-    for (i = 0; i < gradientColors.length; i++) {
-        const { stop, color, alpha } = gradientColors[i];
-        gradient.fillStyle(color, alpha);
-        gradient.fillCircle(0, 0, lightRadius * (1 - stop));
-    }
+    
+    // Capas de gradiente
+    gradient.fillStyle(0xf39c12, 0.1); // Amarillo exterior muy tenue
+    gradient.fillCircle(0, 0, lightRadius);
+    
+    gradient.fillStyle(0xf39c12, 0.2); // Amarillo medio
+    gradient.fillCircle(0, 0, lightRadius * 0.7);
+    
+    gradient.fillStyle(0xf1c40f, 0.3); // Amarillo interior más intenso
+    gradient.fillCircle(0, 0, lightRadius * 0.4);
     
     // Generar textura de luz
     const lightTexture = gradient.generateTexture('player_light', lightRadius * 2, lightRadius * 2);
@@ -94,13 +117,19 @@ function createPlayer(scene) {
     light.setDepth(3);
     light.setAlpha(0.7);
     
-    // Añadir partículas para el jugador
-    const particles = scene.add.particles('player_texture');
+    // Añadir partículas para el jugador (estelas al moverse)
+    const particleGraphic = scene.add.graphics();
+    particleGraphic.fillStyle(0x3498db, 0.7);
+    particleGraphic.fillCircle(0, 0, 5);
+    particleGraphic.generateTexture('player_particle', 10, 10);
+    particleGraphic.destroy();
+    
+    const particles = scene.add.particles('player_particle');
     
     // Configurar emisor de partículas
     const emitter = particles.createEmitter({
-        alpha: { start: 0.5, end: 0 },
-        scale: { start: 0.2, end: 0.1 },
+        alpha: { start: 0.7, end: 0 },
+        scale: { start: 0.7, end: 0.1 },
         speed: 20,
         lifespan: 800,
         blendMode: 'ADD',

@@ -71,7 +71,7 @@ function placeEnemies(scene) {
 }
 
 /**
- * Crea un enemigo con mejor diseño visual
+ * Crea un enemigo con diseño visual mejorado
  */
 function createEnemy(scene, x, y, enemyType, typeIndex, level) {
     // Crear gráfico personalizado para el enemigo
@@ -83,8 +83,8 @@ function createEnemy(scene, x, y, enemyType, typeIndex, level) {
     
     // Dibujar forma según tipo de enemigo
     switch (enemyType.shape) {
-        case 'triangle':
-            // Triángulo (sombra)
+        case 'triangle': // Sombra
+            // Cuerpo triangular
             enemyGraphic.beginPath();
             enemyGraphic.moveTo(0, -size/1.3);
             enemyGraphic.lineTo(-size/1.3, size/1.3);
@@ -92,43 +92,55 @@ function createEnemy(scene, x, y, enemyType, typeIndex, level) {
             enemyGraphic.closePath();
             enemyGraphic.fillPath();
             
-            // Detalles
-            if (enemyType.details) {
-                // Ojo
-                enemyGraphic.fillStyle(0xffffff, 0.8);
-                enemyGraphic.fillCircle(0, 0, size/5);
-                
-                enemyGraphic.fillStyle(0x000000, 1);
-                enemyGraphic.fillCircle(0, 0, size/10);
-            }
+            // Ojos fantasmales
+            enemyGraphic.fillStyle(0xffffff, 0.8);
+            enemyGraphic.fillCircle(-size/5, -size/10, size/10);
+            enemyGraphic.fillCircle(size/5, -size/10, size/10);
+            
+            // Pupilas
+            enemyGraphic.fillStyle(0x000000, 1);
+            enemyGraphic.fillCircle(-size/5, -size/10, size/20);
+            enemyGraphic.fillCircle(size/5, -size/10, size/20);
+            
+            // Boca espectral
+            enemyGraphic.lineStyle(1, 0xffffff, 0.7);
+            enemyGraphic.beginPath();
+            enemyGraphic.moveTo(-size/4, size/4);
+            enemyGraphic.lineTo(size/4, size/4);
+            enemyGraphic.stroke();
             break;
             
-        case 'square':
-            // Cuadrado (centinela)
+        case 'square': // Centinela
+            // Cuerpo cuadrado
             enemyGraphic.fillRect(-size/1.5, -size/1.5, size*1.3, size*1.3);
             
-            // Detalles
-            if (enemyType.details) {
-                // Marco interior
-                enemyGraphic.lineStyle(2, 0x000000, 0.5);
-                enemyGraphic.strokeRect(-size/2, -size/2, size, size);
-                
-                // Ojos
-                enemyGraphic.fillStyle(0xffffff, 0.8);
-                enemyGraphic.fillCircle(-size/4, -size/4, size/8);
-                enemyGraphic.fillCircle(size/4, -size/4, size/8);
-                
-                enemyGraphic.fillStyle(0x000000, 1);
-                enemyGraphic.fillCircle(-size/4, -size/4, size/16);
-                enemyGraphic.fillCircle(size/4, -size/4, size/16);
-            }
+            // Marco interior
+            enemyGraphic.lineStyle(2, 0x000000, 0.5);
+            enemyGraphic.strokeRect(-size/2, -size/2, size, size);
+            
+            // Ojos de centinela
+            enemyGraphic.fillStyle(0xff0000, 0.8);
+            enemyGraphic.fillCircle(-size/4, -size/4, size/8);
+            enemyGraphic.fillCircle(size/4, -size/4, size/8);
+            
+            // Detalles mecánicos
+            enemyGraphic.lineStyle(1, 0xffffff, 0.7);
+            enemyGraphic.beginPath();
+            enemyGraphic.moveTo(-size/2.5, 0);
+            enemyGraphic.lineTo(size/2.5, 0);
+            enemyGraphic.stroke();
+            
+            enemyGraphic.beginPath();
+            enemyGraphic.moveTo(-size/2.5, size/4);
+            enemyGraphic.lineTo(size/2.5, size/4);
+            enemyGraphic.stroke();
             break;
             
-        case 'hex':
-            // Hexágono (brujo)
+        case 'hex': // Brujo
+            // Cuerpo hexagonal
             enemyGraphic.beginPath();
             for (let i = 0; i < 6; i++) {
-                const angle = (Math.PI / 3) * i;
+                const angle = (Math.PI / 3) * i - Math.PI/6; // Girado ligeramente
                 const px = Math.sin(angle) * (size/1.3);
                 const py = Math.cos(angle) * (size/1.3);
                 if (i === 0) {
@@ -140,25 +152,28 @@ function createEnemy(scene, x, y, enemyType, typeIndex, level) {
             enemyGraphic.closePath();
             enemyGraphic.fillPath();
             
-            // Detalles
-            if (enemyType.details) {
-                // Símbolo arcano
-                enemyGraphic.lineStyle(2, 0xffffff, 0.7);
-                enemyGraphic.beginPath();
-                enemyGraphic.moveTo(0, -size/2);
-                enemyGraphic.lineTo(0, size/2);
-                enemyGraphic.moveTo(-size/2, 0);
-                enemyGraphic.lineTo(size/2, 0);
-                enemyGraphic.strokePath();
-                
-                // Círculo central
-                enemyGraphic.lineStyle(2, 0xffffff, 0.7);
-                enemyGraphic.strokeCircle(0, 0, size/4);
-            }
+            // Símbolo arcano
+            enemyGraphic.lineStyle(2, 0xffffff, 0.7);
+            enemyGraphic.beginPath();
+            enemyGraphic.moveTo(0, -size/2);
+            enemyGraphic.lineTo(0, size/2);
+            enemyGraphic.moveTo(-size/2, 0);
+            enemyGraphic.lineTo(size/2, 0);
+            enemyGraphic.strokePath();
+            
+            // Círculo central
+            enemyGraphic.lineStyle(2, 0xffffff, 0.7);
+            enemyGraphic.strokeCircle(0, 0, size/4);
+            
+            // Ojo central místico
+            enemyGraphic.fillStyle(0xffffff, 0.9);
+            enemyGraphic.fillCircle(0, 0, size/6);
+            enemyGraphic.fillStyle(0x000000, 1);
+            enemyGraphic.fillCircle(0, 0, size/12);
             break;
             
-        case 'diamond':
-            // Diamante (asesino)
+        case 'diamond': // Asesino
+            // Cuerpo de diamante
             enemyGraphic.beginPath();
             enemyGraphic.moveTo(0, -size/1.2);
             enemyGraphic.lineTo(size/1.2, 0);
@@ -167,25 +182,30 @@ function createEnemy(scene, x, y, enemyType, typeIndex, level) {
             enemyGraphic.closePath();
             enemyGraphic.fillPath();
             
-            // Detalles
-            if (enemyType.details) {
-                // Línea diagonal
-                enemyGraphic.lineStyle(2, 0x000000, 0.5);
-                enemyGraphic.beginPath();
-                enemyGraphic.moveTo(-size/3, -size/3);
-                enemyGraphic.lineTo(size/3, size/3);
-                enemyGraphic.strokePath();
-                
-                // Línea diagonal inversa
-                enemyGraphic.beginPath();
-                enemyGraphic.moveTo(-size/3, size/3);
-                enemyGraphic.lineTo(size/3, -size/3);
-                enemyGraphic.strokePath();
-            }
+            // Cuchilla superior
+            enemyGraphic.fillStyle(0x7f8c8d, 1);
+            enemyGraphic.beginPath();
+            enemyGraphic.moveTo(-size/4, -size/4);
+            enemyGraphic.lineTo(0, -size/1.5);
+            enemyGraphic.lineTo(size/4, -size/4);
+            enemyGraphic.closePath();
+            enemyGraphic.fillPath();
+            
+            // Detalles de las cuchillas
+            enemyGraphic.lineStyle(1, 0xffffff, 0.7);
+            enemyGraphic.beginPath();
+            enemyGraphic.moveTo(-size/4, -size/4);
+            enemyGraphic.lineTo(size/4, -size/4);
+            enemyGraphic.stroke();
+            
+            // Ojos amenazantes
+            enemyGraphic.fillStyle(0xff0000, 0.8);
+            enemyGraphic.fillCircle(-size/6, 0, size/12);
+            enemyGraphic.fillCircle(size/6, 0, size/12);
             break;
             
-        case 'octagon':
-            // Octágono (guardián)
+        case 'octagon': // Guardián
+            // Cuerpo octagonal
             enemyGraphic.beginPath();
             for (let i = 0; i < 8; i++) {
                 const angle = (Math.PI / 4) * i;
@@ -200,20 +220,30 @@ function createEnemy(scene, x, y, enemyType, typeIndex, level) {
             enemyGraphic.closePath();
             enemyGraphic.fillPath();
             
-            // Detalles
-            if (enemyType.details) {
-                // Escudo central
-                enemyGraphic.fillStyle(0x000000, 0.5);
-                enemyGraphic.fillCircle(0, 0, size/3);
+            // Escudo central
+            enemyGraphic.fillStyle(0x000000, 0.5);
+            enemyGraphic.fillCircle(0, 0, size/3);
+            
+            // Emblema del escudo
+            enemyGraphic.fillStyle(0xffffff, 0.7);
+            enemyGraphic.fillRect(-size/6, -size/6, size/3, size/3);
+            
+            // Detalles del guardián
+            enemyGraphic.lineStyle(1, 0x000000, 0.7);
+            for (let i = 0; i < 8; i++) {
+                const angle = (Math.PI / 4) * i;
+                const innerRadius = size/3;
+                const outerRadius = size/1.4;
                 
-                // Símbolo
-                enemyGraphic.fillStyle(0xffffff, 0.7);
-                enemyGraphic.fillRect(-size/6, -size/6, size/3, size/3);
+                enemyGraphic.beginPath();
+                enemyGraphic.moveTo(Math.sin(angle) * innerRadius, Math.cos(angle) * innerRadius);
+                enemyGraphic.lineTo(Math.sin(angle) * outerRadius, Math.cos(angle) * outerRadius);
+                enemyGraphic.stroke();
             }
             break;
             
-        case 'star':
-            // Estrella (espectro)
+        case 'star': // Espectro
+            // Cuerpo en forma de estrella
             enemyGraphic.beginPath();
             const points = 5;
             const innerRadius = size/2;
@@ -235,16 +265,17 @@ function createEnemy(scene, x, y, enemyType, typeIndex, level) {
             enemyGraphic.closePath();
             enemyGraphic.fillPath();
             
-            // Detalles
-            if (enemyType.details) {
-                // Círculo central
-                enemyGraphic.fillStyle(0xffffff, 0.6);
-                enemyGraphic.fillCircle(0, 0, size/5);
-                
-                // Borde brillante
-                enemyGraphic.lineStyle(1, 0xffffff, 0.7);
-                enemyGraphic.strokeCircle(0, 0, size/2.5);
-            }
+            // Núcleo espectral
+            enemyGraphic.fillStyle(0xffffff, 0.6);
+            enemyGraphic.fillCircle(0, 0, size/3.5);
+            
+            // Ojo central
+            enemyGraphic.fillStyle(enemyType.color, 0.9);
+            enemyGraphic.fillCircle(0, 0, size/7);
+            
+            // Borde brillante
+            enemyGraphic.lineStyle(1, 0xffffff, 0.7);
+            enemyGraphic.strokeCircle(0, 0, size/2.5);
             break;
     }
     

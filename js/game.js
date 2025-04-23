@@ -445,12 +445,16 @@ function processStatusEffects(scene) {
 }
 
 /**
- * Coloca las escaleras para bajar al siguiente nivel
+ * Coloca las escaleras para bajar al siguiente nivel con un diseño mejorado de portal
  */
 function placeStairs(scene) {
     // Eliminar escaleras anteriores si existen
     if (gameState.stairs) {
         gameState.stairs.destroy();
+    }
+    
+    if (gameState.stairsParticles) {
+        gameState.stairsParticles.destroy();
     }
     
     // Colocar escaleras en la última sala
@@ -459,51 +463,175 @@ function placeStairs(scene) {
         const stairsX = lastRoom.centerX * CONFIG.tileSize + (CONFIG.tileSize / 2);
         const stairsY = lastRoom.centerY * CONFIG.tileSize + (CONFIG.tileSize / 2);
         
-        // Crear gráfico para las escaleras (portal)
+        // Crear gráfico para el portal mejorado
         const stairsGraphic = scene.add.graphics();
         
-        // Círculo exterior
-        stairsGraphic.lineStyle(3, 0xffd369, 0.8);
-        stairsGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.8);
+        // Fondo del portal
+        const portalSize = CONFIG.tileSize * 2;
         
-        // Círculo interior
-        stairsGraphic.lineStyle(2, 0xe94560, 0.6);
-        stairsGraphic.strokeCircle(0, 0, CONFIG.tileSize * 0.5);
+        // Círculo exterior (aura)
+        stairsGraphic.fillStyle(0x8e44ad, 0.3); // Púrpura con transparencia
+        stairsGraphic.fillCircle(0, 0, portalSize/2.5);
+        
+        // Círculo principal
+        stairsGraphic.fillStyle(0x5b2c6f, 0.8);
+        stairsGraphic.fillCircle(0, 0, portalSize/3);
+        
+        // Anillo exterior dorado
+        stairsGraphic.lineStyle(3, 0xffd369, 0.8);
+        stairsGraphic.strokeCircle(0, 0, portalSize/2.5);
+        
+        // Anillo interior
+        stairsGraphic.lineStyle(2, 0xe94560, 0.7);
+        stairsGraphic.strokeCircle(0, 0, portalSize/3.5);
+        
+        // Patrón de espiral dentro del portal
+        stairsGraphic.lineStyle(2, 0xffffff, 0.5);
+        
+        const spiralSegments = 16;
+        const maxRadius = portalSize/3.8;
+        
+        for (let i = 0; i <= spiralSegments; i++) {
+            const angle = (i / spiralSegments) * Math.PI * 6;
+            const radius = (i / spiralSegments) * maxRadius;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            
+            if (i === 0) {
+                stairsGraphic.beginPath();
+                stairsGraphic.moveTo(x, y);
+            } else {
+                stairsGraphic.lineTo(x, y);
+            }
+        }
+        stairsGraphic.strokePath();
+        
+        // Líneas de energía que salen del centro
+        for (let i = 0; i < 8; i++) {
+            const angle = (Math.PI / 4) * i;
+            stairsGraphic.lineStyle(1, 0xffffff, 0.7);
+            stairsGraphic.beginPath();
+            stairsGraphic.moveTo(0, 0);
+            stairsGraphic.lineTo(
+                Math.cos(angle) * (portalSize/3), 
+                Math.sin(angle) * (portalSize/3)
+            );
+            stairsGraphic.strokePath();
+        }
         
         // Generar textura
-        const stairsTextureKey = 'stairs_texture';
-        stairsGraphic.generateTexture(stairsTextureKey, CONFIG.tileSize * 2, CONFIG.tileSize * 2);
+        const stairsTextureKey = 'portal_texture';
+        stairsGraphic.generateTexture(stairsTextureKey, portalSize, portalSize);
         stairsGraphic.destroy();
         
         // Crear sprite con físicas
         gameState.stairs = scene.physics.add.sprite(stairsX, stairsY, stairsTextureKey);
-        gameState.stairs.setScale(0.8);
+        gameState.stairs.setScale(0.6);
         gameState.stairs.setDepth(3);
         
-        // Añadir animación de brillo
+        // Añadir animación de rotación
         scene.tweens.add({
             targets: gameState.stairs,
-            alpha: 0.7,
-            scale: 0.9,
-            duration: 1500,
+            angle: 360,
+            duration: 10000,
+            repeat: -1,
+            ease: 'Linear'
+        });
+        
+        // Animación de pulso
+        scene.tweens.add({
+            targets: gameState.stairs,
+            scale: { from: 0.5, to: 0.7 },
+            alpha: { from: 0.8, to: 1 },
+            duration: 2000,
             yoyo: true,
-            repeat: -1
+            repeat: -1,
+            ease: 'Sine.easeInOut'
         });
         
-        // Añadir partículas alrededor
-        const particles = scene.add.particles(stairsTextureKey);
-        const emitter = particles.createEmitter({
-            scale: { start: 0.1, end: 0 },
-            speed: 20,
+        // Crear partículas para el portal
+        // Partícula para el exterior (estrellas)
+        const starParticleGraphic = scene.add.graphics();
+        starParticleGraphic.fillStyle(0xffd369, 0.8);
+        
+        // Dibujar forma de estrella pequeña
+        const starSize = 4;
+        for (let i = 0; i < 5; i++) {
+            const angle = (Math.PI * 2 / 5) * i - Math.PI/2;
+            const x = Math.cos(angle) * starSize;
+            const y = Math.sin(angle) * starSize;
+            
+            if (i === 0) {
+                starParticleGraphic.beginPath();
+                starParticleGraphic.moveTo(x, y);
+            } else {
+                starParticleGraphic.lineTo(x, y);
+            }
+        }
+        starParticleGraphic.closePath();
+        starParticleGraphic.fillPath();
+        
+        const starParticleKey = 'portal_star_particle';
+        starParticleGraphic.generateTexture(starParticleKey, starSize*2, starSize*2);
+        starParticleGraphic.destroy();
+        
+        // Partícula para el interior (destellos)
+        const glowParticleGraphic = scene.add.graphics();
+        glowParticleGraphic.fillStyle(0xe94560, 0.8);
+        glowParticleGraphic.fillCircle(0, 0, 3);
+        
+        const glowParticleKey = 'portal_glow_particle';
+        glowParticleGraphic.generateTexture(glowParticleKey, 6, 6);
+        glowParticleGraphic.destroy();
+        
+        // Crear sistema de partículas
+        gameState.stairsParticles = scene.add.particles(starParticleKey);
+        
+        // Emisor de estrellas que orbitan
+        const starEmitter = gameState.stairsParticles.createEmitter({
+            x: stairsX,
+            y: stairsY,
+            speed: { min: 40, max: 60 },
+            scale: { start: 0.8, end: 0.2 },
+            angle: { min: 0, max: 360 },
+            lifespan: 2000,
             blendMode: 'ADD',
-            lifespan: 1000,
-            frequency: 200
+            frequency: 500,
+            quantity: 1,
+            emitZone: {
+                type: 'edge',
+                source: new Phaser.Geom.Circle(0, 0, portalSize/3),
+                quantity: 16,
+                yoyo: false
+            }
         });
         
-        emitter.startFollow(gameState.stairs);
+        // Emisor de destellos interiores
+        const glowEmitter = gameState.stairsParticles.createEmitter({
+            x: stairsX,
+            y: stairsY,
+            speed: { min: 20, max: 30 },
+            scale: { start: 1, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 1000,
+            blendMode: 'ADD',
+            frequency: 200,
+            quantity: 2,
+            emitZone: {
+                type: 'random',
+                source: new Phaser.Geom.Circle(0, 0, portalSize/5),
+                quantity: 8
+            }
+        });
         
-        // Guardar referencia para limpiar después
-        gameState.stairsParticles = particles;
+        // Cambiar entre partículas
+        scene.time.addEvent({
+            delay: 300,
+            callback: () => {
+                glowEmitter.setFrame(glowParticleKey);
+            },
+            callbackScope: scene
+        });
     }
 }
 

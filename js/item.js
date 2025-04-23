@@ -312,62 +312,75 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
     // Dibujar forma según tipo de objeto
     switch (itemType.shape) {
         case 'bottle': // Poción de salud
-            // Botella
-            itemGraphic.fillStyle(baseColor, 1);
+            // Botella redonda
+            itemGraphic.fillStyle(0x7f8c8d, 0.9); // Color base del cristal
             
-            // Base de la botella
-            itemGraphic.fillRect(-size/4, -size/8, size/2, size/2);
-            
-            // Parte superior redondeada
+            // Base de la botella (cuerpo)
             itemGraphic.beginPath();
-            itemGraphic.arc(0, -size/8, size/4, Math.PI, 0, false);
+            itemGraphic.arc(0, size/10, size/3, 0, Math.PI, true);
+            itemGraphic.arc(0, size/10, size/3, Math.PI, Math.PI*2, true);
             itemGraphic.fillPath();
             
             // Cuello de la botella
-            itemGraphic.fillRect(-size/8, -size/3, size/4, size/5);
+            itemGraphic.fillRect(-size/7, -size/3, size/3.5, size/4);
             
             // Tapa
-            itemGraphic.fillStyle(0x333333, 0.8);
-            itemGraphic.fillRect(-size/7, -size/2.5, size/3.5, size/10);
+            itemGraphic.fillStyle(0x594f4f, 1);
+            itemGraphic.fillRect(-size/6, -size/3 - size/10, size/3, size/12);
             
             // Contenido líquido
-            itemGraphic.fillStyle(fillColor, 0.8);
-            itemGraphic.fillRect(-size/5, -size/10, size/2.5, size/3);
+            itemGraphic.fillStyle(fillColor, 1);
             
-            // Brillo
-            itemGraphic.fillStyle(0xffffff, 0.6);
-            itemGraphic.fillCircle(-size/8, -size/10, size/12);
+            // Forma del líquido (media circunferencia en la parte inferior)
+            itemGraphic.beginPath();
+            itemGraphic.arc(0, size/10, size/4, 0, Math.PI, true);
+            itemGraphic.arc(0, size/10, size/4, Math.PI, Math.PI*2, true);
+            itemGraphic.fillPath();
+            
+            // Brillo en el vidrio
+            itemGraphic.fillStyle(0xffffff, 0.7);
+            itemGraphic.fillCircle(-size/10, -size/10, size/15);
+            
+            // Burbujas en el líquido
+            itemGraphic.fillStyle(0xffffff, 0.5);
+            itemGraphic.fillCircle(size/12, size/8, size/20);
+            itemGraphic.fillCircle(-size/10, size/6, size/25);
             break;
             
-        case 'sword': // Poción de fuerza - Espada
+        case 'sword': // Poción de fuerza - Espada/Arma
             // Hoja de la espada
-            itemGraphic.fillStyle(0xcccccc, 1);
+            itemGraphic.fillStyle(0xbdc3c7, 1);
+            
+            // Forma de la hoja
             itemGraphic.beginPath();
             itemGraphic.moveTo(0, -size/1.8);
-            itemGraphic.lineTo(size/10, -size/3);
-            itemGraphic.lineTo(size/10, size/3);
-            itemGraphic.lineTo(0, size/2.5);
-            itemGraphic.lineTo(-size/10, size/3);
-            itemGraphic.lineTo(-size/10, -size/3);
+            itemGraphic.lineTo(-size/10, -size/2.5);
+            itemGraphic.lineTo(-size/10, size/5);
+            itemGraphic.lineTo(0, size/4);
+            itemGraphic.lineTo(size/10, size/5);
+            itemGraphic.lineTo(size/10, -size/2.5);
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
-            // Filo de la espada
-            itemGraphic.fillStyle(0xeeeeee, 1);
-            itemGraphic.fillRect(-size/25, -size/1.9, size/12.5, size);
+            // Filo de la espada (línea central)
+            itemGraphic.fillStyle(0xecf0f1, 1);
+            itemGraphic.fillRect(-size/40, -size/1.9, size/20, size*0.6);
             
-            // Empuñadura
+            // Guarda de la espada
             itemGraphic.fillStyle(baseColor, 1);
-            
-            // Guarda
-            itemGraphic.fillRect(-size/4, size/4, size/2, size/10);
+            itemGraphic.fillRect(-size/4, size/4.5, size/2, size/12);
             
             // Mango
-            itemGraphic.fillRect(-size/12, size/3, size/6, size/4);
+            itemGraphic.fillStyle(0x795548, 1);
+            itemGraphic.fillRect(-size/15, size/3.5, size/7.5, size/4);
             
             // Pomo
+            itemGraphic.fillStyle(baseColor, 1);
+            itemGraphic.fillCircle(0, size/2.3, size/12);
+            
+            // Detalles del pomo
             itemGraphic.fillStyle(fillColor, 1);
-            itemGraphic.fillCircle(0, size/2, size/8);
+            itemGraphic.fillCircle(0, size/2.3, size/20);
             
             // Brillo en la hoja
             itemGraphic.fillStyle(0xffffff, 0.7);
@@ -376,42 +389,63 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
             
         case 'shield': // Poción de defensa - Escudo
             // Base del escudo
-            itemGraphic.fillStyle(baseColor, 1);
+            itemGraphic.fillStyle(0x7f8c8d, 1); // Base metálica
+            
+            // Forma de escudo medieval
             itemGraphic.beginPath();
             itemGraphic.moveTo(0, -size/2);
             itemGraphic.lineTo(size/2, -size/4);
-            itemGraphic.lineTo(size/2, size/4);
-            itemGraphic.lineTo(0, size/2);
-            itemGraphic.lineTo(-size/2, size/4);
+            itemGraphic.lineTo(size/2, size/6);
+            itemGraphic.quadraticCurveTo(size/2, size/2, 0, size/2);
+            itemGraphic.quadraticCurveTo(-size/2, size/2, -size/2, size/6);
             itemGraphic.lineTo(-size/2, -size/4);
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
-            // Borde del escudo
-            itemGraphic.lineStyle(size/15, 0x333333, 0.7);
-            itemGraphic.strokePath();
+            // Panel central del escudo
+            itemGraphic.fillStyle(baseColor, 1);
+            
+            // Forma central ligeramente más pequeña
+            itemGraphic.beginPath();
+            itemGraphic.moveTo(0, -size/2.5);
+            itemGraphic.lineTo(size/2.5, -size/3.5);
+            itemGraphic.lineTo(size/2.5, size/7);
+            itemGraphic.quadraticCurveTo(size/2.5, size/2.5, 0, size/2.5);
+            itemGraphic.quadraticCurveTo(-size/2.5, size/2.5, -size/2.5, size/7);
+            itemGraphic.lineTo(-size/2.5, -size/3.5);
+            itemGraphic.closePath();
+            itemGraphic.fillPath();
             
             // Emblema central
             itemGraphic.fillStyle(fillColor, 0.9);
             itemGraphic.fillCircle(0, 0, size/4);
             
-            // Detalles del emblema
+            // Detalles del emblema (cruz o símbolo similar)
             itemGraphic.lineStyle(size/25, 0xffffff, 0.8);
             itemGraphic.beginPath();
-            itemGraphic.moveTo(-size/8, -size/8);
-            itemGraphic.lineTo(size/8, size/8);
-            itemGraphic.moveTo(size/8, -size/8);
-            itemGraphic.lineTo(-size/8, size/8);
+            itemGraphic.moveTo(0, -size/6);
+            itemGraphic.lineTo(0, size/6);
+            itemGraphic.moveTo(-size/6, 0);
+            itemGraphic.lineTo(size/6, 0);
             itemGraphic.strokePath();
             
-            // Brillo
+            // Remaches en las esquinas
+            itemGraphic.fillStyle(0xbdc3c7, 1);
+            itemGraphic.fillCircle(-size/3, -size/6, size/15);
+            itemGraphic.fillCircle(size/3, -size/6, size/15);
+            itemGraphic.fillCircle(-size/3, size/4, size/15);
+            itemGraphic.fillCircle(size/3, size/4, size/15);
+            
+            // Brillo en el metal
             itemGraphic.fillStyle(0xffffff, 0.6);
             itemGraphic.fillCircle(-size/5, -size/5, size/15);
             break;
             
-        case 'gem': // Poción de experiencia - Gema
-            // Base de la gema
+        case 'gem': // Poción de experiencia - Gema cristalina
+            // Base de la gema con forma de diamante
             itemGraphic.fillStyle(baseColor, 1);
+            
+            // Diamante principal
             itemGraphic.beginPath();
             itemGraphic.moveTo(0, -size/2);
             itemGraphic.lineTo(size/2.5, 0);
@@ -420,8 +454,8 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
-            // Facetas interiores
-            itemGraphic.fillStyle(fillColor, 0.8);
+            // Facetas interiores con gradiente
+            itemGraphic.fillStyle(fillColor, 0.9);
             
             // Faceta superior
             itemGraphic.beginPath();
@@ -439,11 +473,20 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
-            // Brillo
+            // Líneas de las facetas
+            itemGraphic.lineStyle(1, 0xffffff, 0.5);
+            itemGraphic.beginPath();
+            itemGraphic.moveTo(0, -size/2);
+            itemGraphic.lineTo(0, size/2);
+            itemGraphic.moveTo(-size/2.5, 0);
+            itemGraphic.lineTo(size/2.5, 0);
+            itemGraphic.strokePath();
+            
+            // Brillo central
             itemGraphic.fillStyle(0xffffff, 0.8);
             itemGraphic.fillCircle(-size/6, -size/6, size/12);
             
-            // Destellos
+            // Destellos alrededor
             for (let i = 0; i < 4; i++) {
                 const angle = (Math.PI / 2) * i;
                 const distance = size/1.8;
@@ -456,27 +499,27 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
             break;
             
         case 'heart': // Poción de vida máxima - Corazón
-            // Corazón
+            // Corazón con brillo especial
             itemGraphic.fillStyle(baseColor, 1);
             
-            // Dibujar medio corazón
+            // Dibujar medio corazón (izquierda)
             itemGraphic.beginPath();
             itemGraphic.arc(-size/4, -size/6, size/4, Math.PI, 0, true);
             itemGraphic.lineTo(0, size/2);
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
-            // Dibujar otro medio corazón
+            // Dibujar otro medio corazón (derecha)
             itemGraphic.beginPath();
             itemGraphic.arc(size/4, -size/6, size/4, Math.PI, 2*Math.PI, true);
             itemGraphic.lineTo(0, size/2);
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
-            // Brillo interior
+            // Corazón interior con brillo
             itemGraphic.fillStyle(fillColor, 0.9);
             
-            // Dibujar corazón más pequeño dentro
+            // Dibujar corazón más pequeño dentro (izquierda)
             const innerScale = 0.7;
             itemGraphic.beginPath();
             itemGraphic.arc(-size/4 * innerScale, -size/6 * innerScale, size/4 * innerScale, Math.PI, 0, true);
@@ -484,40 +527,58 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
+            // Dibujar corazón más pequeño dentro (derecha)
             itemGraphic.beginPath();
             itemGraphic.arc(size/4 * innerScale, -size/6 * innerScale, size/4 * innerScale, Math.PI, 2*Math.PI, true);
             itemGraphic.lineTo(0, size/2 * innerScale);
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
-            // Brillo
+            // Brillo central
             itemGraphic.fillStyle(0xffffff, 0.7);
             itemGraphic.fillCircle(-size/6, -size/6, size/15);
+            
+            // Aura alrededor del corazón
+            itemGraphic.lineStyle(2, fillColor, 0.4);
+            itemGraphic.strokeCircle(0, 0, size/1.5);
             break;
             
-        case 'skull': // Poción misteriosa - Calavera
+        case 'skull': // Poción misteriosa - Calavera con aura
             // Base de la calavera
-            itemGraphic.fillStyle(0xeeeeee, 1);
+            itemGraphic.fillStyle(0xf0f0f0, 1);
             
             // Forma del cráneo
             itemGraphic.beginPath();
-            itemGraphic.arc(0, -size/6, size/3, 0, Math.PI * 2);
+            itemGraphic.arc(0, -size/10, size/2.5, 0, Math.PI * 2);
             itemGraphic.fillPath();
             
             // Mandíbula
-            itemGraphic.fillStyle(0xdddddd, 1);
+            itemGraphic.fillStyle(0xe4e4e4, 1);
             itemGraphic.beginPath();
-            itemGraphic.moveTo(-size/4, size/10);
-            itemGraphic.lineTo(size/4, size/10);
-            itemGraphic.lineTo(size/5, size/3);
-            itemGraphic.lineTo(-size/5, size/3);
+            itemGraphic.moveTo(-size/3.5, size/10);
+            itemGraphic.lineTo(size/3.5, size/10);
+            itemGraphic.lineTo(size/4, size/2);
+            itemGraphic.lineTo(-size/4, size/2);
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
-            // Ojos
+            // Ojos de la calavera
             itemGraphic.fillStyle(0x000000, 0.8);
-            itemGraphic.fillEllipse(-size/8, -size/6, size/10, size/7);
-            itemGraphic.fillEllipse(size/8, -size/6, size/10, size/7);
+            // Ojo izquierdo (forma triangular)
+            itemGraphic.beginPath();
+            itemGraphic.moveTo(-size/6, -size/8);
+            itemGraphic.lineTo(-size/10, -size/5);
+            itemGraphic.lineTo(-size/4, -size/5);
+            itemGraphic.closePath();
+            itemGraphic.fillPath();
+            
+            // Ojo derecho (forma triangular)
+            itemGraphic.beginPath();
+            itemGraphic.moveTo(size/6, -size/8);
+            itemGraphic.lineTo(size/10, -size/5);
+            itemGraphic.lineTo(size/4, -size/5);
+            itemGraphic.closePath();
+            itemGraphic.fillPath();
             
             // Nariz
             itemGraphic.beginPath();
@@ -527,16 +588,22 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
             itemGraphic.closePath();
             itemGraphic.fillPath();
             
+            // Dientes
+            itemGraphic.fillStyle(0xffffff, 1);
+            for (let i = 0; i < 3; i++) {
+                itemGraphic.fillRect(-size/5 + (i * size/7), size/10, size/15, size/10);
+            }
+            
             // Aura misteriosa
             itemGraphic.fillStyle(baseColor, 0.4);
-            itemGraphic.fillCircle(0, 0, size/2);
+            itemGraphic.fillCircle(0, 0, size/1.5);
             
             // Líneas de energía
             itemGraphic.lineStyle(1, fillColor, 0.8);
             for (let i = 0; i < 8; i++) {
                 const angle = (Math.PI / 4) * i;
                 const innerRadius = size/2.5;
-                const outerRadius = size/1.5;
+                const outerRadius = size;
                 
                 itemGraphic.beginPath();
                 itemGraphic.moveTo(Math.cos(angle) * innerRadius, Math.sin(angle) * innerRadius);
@@ -544,26 +611,9 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
                 itemGraphic.strokePath();
             }
             break;
-            
-        default: // Objeto genérico (gema simple)
-            // Forma de diamante
-            itemGraphic.fillStyle(baseColor, 1);
-            itemGraphic.beginPath();
-            itemGraphic.moveTo(0, -size/2);
-            itemGraphic.lineTo(size/2, 0);
-            itemGraphic.lineTo(0, size/2);
-            itemGraphic.lineTo(-size/2, 0);
-            itemGraphic.closePath();
-            itemGraphic.fillPath();
-            
-            // Brillo
-            itemGraphic.fillStyle(0xffffff, 0.7);
-            itemGraphic.fillCircle(-size/6, -size/6, size/8);
     }
     
     // Indicador de nivel (brillo según nivel)
-    // Nivel 1: sin brillo adicional
-    // Nivel 2+: brillo creciente
     if (level > 1) {
         const glowIntensity = 0.2 + (level * 0.1);
         const glowSize = size/2 + (level * 3);
@@ -576,6 +626,38 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
         if (level >= 3) {
             itemGraphic.lineStyle(2, 0xffffff, 0.4);
             itemGraphic.strokeCircle(0, 0, size/1.5);
+            
+            // Estrellas indicadoras de calidad para nivel 5+
+            if (level >= 5) {
+                const starCount = Math.min(5, level - 2);
+                const starRadius = size/6;
+                
+                for (let i = 0; i < starCount; i++) {
+                    const angle = (Math.PI * 2 / starCount) * i - Math.PI/2;
+                    const starX = Math.cos(angle) * (size * 0.9);
+                    const starY = Math.sin(angle) * (size * 0.9);
+                    
+                    // Pequeña estrella
+                    itemGraphic.fillStyle(0xf1c40f, 1);
+                    
+                    // Dibujar estrella
+                    itemGraphic.beginPath();
+                    for (let j = 0; j < 10; j++) {
+                        const starAngle = (Math.PI * 2 / 10) * j - Math.PI/2;
+                        const radius = j % 2 === 0 ? starRadius : starRadius/2;
+                        const px = starX + Math.cos(starAngle) * radius;
+                        const py = starY + Math.sin(starAngle) * radius;
+                        
+                        if (j === 0) {
+                            itemGraphic.moveTo(px, py);
+                        } else {
+                            itemGraphic.lineTo(px, py);
+                        }
+                    }
+                    itemGraphic.closePath();
+                    itemGraphic.fillPath();
+                }
+            }
         }
     }
     
@@ -590,7 +672,7 @@ function createItem(scene, x, y, itemType, typeIndex, level) {
     
     // Crear sprite con físicas
     const itemSprite = scene.physics.add.sprite(x, y, itemTextureKey);
-    itemSprite.setScale(0.7 + (level * 0.03)); // Ligeramente más grande con nivel más alto
+    itemSprite.setScale(0.7 + (level * 0.05)); // Ligeramente más grande con nivel más alto
     itemSprite.depth = 2;
     
     // Añadir al grupo de físicas
